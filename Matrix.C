@@ -12,14 +12,18 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.C,v 1.10 1993/11/24 00:13:56 jak Exp $
+/*  $Id: Matrix.C,v 1.11 1993/11/27 00:20:22 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.10  1993/11/24 00:13:56  jak
-/*  Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
-/*  deleted in LU_Decmposition. -jak
+/*  Revision 1.11  1993/11/27 00:20:22  jak
+/*  Matrix Class has been ported for use with the AT&T cfront compiler version 3
+/*  (with templates).   -jak
 /*
+ * Revision 1.10  1993/11/24  00:13:56  jak
+ * Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
+ * deleted in LU_Decmposition. -jak
+ *
  * Revision 1.9  1993/11/23  21:06:53  jak
  * Bug Fixes especially for rare cases of NUll Matrices.  -jak
  *
@@ -54,13 +58,9 @@
  **/
 // =====================================
 
-static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.10 1993/11/24 00:13:56 jak Exp $";
+static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.11 1993/11/27 00:20:22 jak Exp $";
 
-
-#ifdef LIBGpp
 #include <new.h>
-#endif
-
 #include <stdlib.h>
 #include <math.h>
 
@@ -68,7 +68,11 @@ static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.10 1993/11/24 00:13:56 jak Ex
 #include "Matrix.H"
 #include "Linked_List_Template.H"
 
-void Abort( char *s ){
+#define ABS(x) ((x)>=0?(x):-(x))
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+void Abort( const char *s ){
     cerr <<  s << "\n";
     abort();
 };
@@ -232,10 +236,10 @@ Matrix & Matrix::operator += ( const Matrix& matA )
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
 	
-    fr = first_row <? matA.first_row ;
-    fc = first_col <? matA.first_col ;
-    rows = first_row + number_of_rows >? matA.first_row + matA.number_of_rows;
-    cols = first_col + number_of_cols >? matA.first_col + matA.number_of_cols;
+    fr = MIN( first_row, matA.first_row );
+    fc = MIN( first_col, matA.first_col );
+    rows = MAX( first_row + number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MAX( first_col + number_of_cols, matA.first_col + matA.number_of_cols );
     rows -= fr;
     cols -= fc;
 
@@ -288,10 +292,10 @@ Matrix & Matrix::operator -= ( const Matrix& matA)
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
 
-    fr = first_row <? matA.first_row ;
-    fc = first_col <? matA.first_col ;
-    rows = first_row + number_of_rows >? matA.first_row + matA.number_of_rows;
-    cols = first_col + number_of_cols >? matA.first_col + matA.number_of_cols;
+    fr = MIN( first_row, matA.first_row );
+    fc = MIN( first_col, matA.first_col );
+    rows = MAX( first_row + number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MAX( first_col + number_of_cols, matA.first_col + matA.number_of_cols );
     rows -= fr;
     cols -= fc;
 
@@ -402,6 +406,8 @@ Matrix & Matrix::operator /= ( Matrix& matA)
     decomp_list = new Linked_List< Composition >;
 
     *this = *this / matA ;
+	
+	return *this;
 };
 
 Matrix & Matrix::operator &= ( const Matrix& matA)
@@ -413,10 +419,10 @@ Matrix & Matrix::operator &= ( const Matrix& matA)
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
 
-    fr = first_row >? matA.firstrow();
-    fc = first_col >? matA.firstcol();
-    rows = first_row + number_of_rows <? matA.firstrow()+matA.rows();
-    cols = first_col + number_of_cols <? matA.firstcol()+matA.cols();
+    fr = MIN( first_row, matA.first_row );
+    fc = MIN( first_col, matA.first_col );
+    rows = MAX( first_row + number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MAX( first_col + number_of_cols, matA.first_col + matA.number_of_cols );
     rows = rows - fr;
     cols = cols - fc;
 
@@ -453,10 +459,10 @@ Matrix & Matrix::operator %= ( const Matrix & matA)
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
 
-    fr = first_row >? matA.firstrow();
-    fc = first_col >? matA.firstcol();
-    rows = first_row + number_of_rows <? matA.firstrow()+matA.rows();
-    cols = first_col + number_of_cols <? matA.firstcol()+matA.cols();
+    fr = MIN( first_row, matA.first_row );
+    fc = MIN( first_col, matA.first_col );
+    rows = MAX( first_row + number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MAX( first_col + number_of_cols, matA.first_col + matA.number_of_cols );
     rows = rows - fr;
     cols = cols - fc;
 
@@ -519,7 +525,7 @@ float norm ( const Matrix& matA, float p )
                 c<matA.first_col+matA.number_of_cols; c++){
                 temp += fabs( matA[r][c] );
             }
-            max_val = max_val >? temp;
+            max_val = MAX( max_val, temp );
         }
     } else if ( p == 1.0 ){ // 1 - norm      (max col-sum norm)
 		for(max_val=0.0,c=matA.first_col;
@@ -528,7 +534,7 @@ float norm ( const Matrix& matA, float p )
 				r< matA.first_row+matA.number_of_rows; r++){
                 temp += fabs( matA[r][c] );
             }
-            max_val = max_val >? temp;
+            max_val = MAX( max_val, temp );
         }
     } else {              // p - norm => p=2 euclidean norm
 		for(max_val=0.0,c=matA.first_col;
@@ -538,14 +544,14 @@ float norm ( const Matrix& matA, float p )
                 temp += fabs( pow((double)matA[r][c],(double)p ));
             }
             temp = pow( temp , (1.0 / p) );
-            max_val = max_val >? temp;
+            max_val = MAX( max_val, temp );
         }
     }
 
     return (float)max_val;
 };
 
-float determinant ( const Matrix& matA )
+float determinant ( Matrix& matA )
 {
     LU_Decomposition lu;
     unsigned int size;
@@ -603,10 +609,10 @@ Matrix operator+( const Matrix &matA, const Matrix &matB )
     register int r,c;
     register float *ptr_r, *ptr_a, *ptr_b;
 
-    fr = matB.first_row <? matA.first_row ;
-    fc = matB.first_col <? matA.first_col ;
-    rows = matB.first_row + matB.number_of_rows >? matA.first_row + matA.number_of_rows;
-    cols = matB.first_col + matB.number_of_cols >? matA.first_col + matA.number_of_cols;
+    fr = MIN( matB.first_row, matA.first_row );
+    fc = MIN( matB.first_col, matA.first_col );
+    rows = MAX( matB.first_row + matB.number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MAX( matB.first_col + matB.number_of_cols, matA.first_col + matA.number_of_cols );
     rows -= fr;
     cols -= fc;
 
@@ -637,10 +643,10 @@ Matrix operator-( const Matrix &matA, const Matrix &matB )
     register int r,c;
     register float *ptr_r, *ptr_a, *ptr_b;
 
-    fr = matB.first_row <? matA.first_row ;
-    fc = matB.first_col <? matA.first_col ;
-    rows = matB.first_row + matB.number_of_rows >? matA.first_row + matA.number_of_rows;
-    cols = matB.first_col + matB.number_of_cols >? matA.first_col + matA.number_of_cols;
+    fr = MIN( matB.first_row, matA.first_row );
+    fc = MIN( matB.first_col, matA.first_col );
+    rows = MAX( matB.first_row + matB.number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MAX( matB.first_col + matB.number_of_cols, matA.first_col + matA.number_of_cols );
     rows -= fr;
     cols -= fc;
 
@@ -773,10 +779,10 @@ Matrix operator & ( const Matrix &matA, const Matrix &matB){
     register int r,c;
     register float *ptr_r, *ptr_a, *ptr_b;
 
-    fr = matA.firstrow() >? matB.firstrow();
-    fc = matA.firstcol() >? matB.firstcol();
-    rows = matA.firstrow()+matA.rows() <? matB.firstrow()+matB.rows();
-    cols = matA.firstcol()+matA.cols() <? matB.firstcol()+matB.cols();
+    fr = MAX( matB.first_row, matA.first_row );
+    fc = MAX( matB.first_col, matA.first_col );
+    rows = MIN( matB.first_row + matB.number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MIN( matB.first_col + matB.number_of_cols, matA.first_col + matA.number_of_cols );
     rows = rows - fr;
     cols = cols - fc;
 
@@ -801,10 +807,10 @@ Matrix operator % ( const Matrix &matA, const Matrix &matB){
     register int r,c;
     register float *ptr_r, *ptr_a, *ptr_b;
 
-    fr = matA.firstrow() >? matB.firstrow();
-    fc = matA.firstcol() >? matB.firstcol();
-    rows = matA.firstrow()+matA.rows() <? matB.firstrow()+matB.rows();
-    cols = matA.firstcol()+matA.cols() <? matB.firstcol()+matB.cols();
+    fr = MAX( matB.first_row, matA.first_row );
+    fc = MAX( matB.first_col, matA.first_col );
+    rows = MIN( matB.first_row + matB.number_of_rows, matA.first_row + matA.number_of_rows );
+    cols = MIN( matB.first_col + matB.number_of_cols, matA.first_col + matA.number_of_cols );
     rows = rows - fr;
     cols = cols - fc;
 
@@ -978,6 +984,7 @@ LU_Decomposition&  LU_Decomposition::operator = (const LU_Decomposition &lu)
 		lumat = lu.lumat;
 		row_permute = lu.row_permute;
     }
+	return *this;
 };
 
 //
@@ -997,6 +1004,8 @@ LU_Decomposition::LU_Decomposition( Matrix &matA )
     float permute_parity;  // even # of row permutations = +1.0, odd = -1.0
     LU_Decomposition *temp;
 
+    permute_parity = 1.0;
+	
     if ( matA.is_empty() ){
         return;
     }
@@ -1241,7 +1250,7 @@ void IntArray:: deallocate()
 
 
 // Constructors and Destructors
-IntArray:: IntArray( unsigned int len = 0 ): 
+IntArray:: IntArray( unsigned int len ): 
 length(len), first_index(0)
 {
     allocate();
@@ -1301,8 +1310,8 @@ IntArray  IntArray:: operator() ( int fi, unsigned int len ) const
     register int r, start, stop;
     register int *ptrA, *ptrB;
 
-    start = fi >? first_index;
-    stop  = fi+len <? first_index+length;
+    start = MAX( fi, first_index );
+    stop  = MIN( fi+len, first_index+length );
 
     ptrA = &(result[first_index]);
     ptrB = &(array[first_index]);

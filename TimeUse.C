@@ -10,14 +10,18 @@
 //  MY software. 
 //
 //  Revision:
-/*  $Id: TimeUse.C,v 1.3 1993/11/20 21:53:18 jak Exp $
+/*  $Id: TimeUse.C,v 1.4 1993/11/27 00:20:26 jak Exp $
 */
 //  History:
 /*  $Log: TimeUse.C,v $
-/*  Revision 1.3  1993/11/20 21:53:18  jak
-/*  Fixed a bug in the Linked_List_Template to allow it to be correctly
-/*  included and used in a library situation.  -jak
+/*  Revision 1.4  1993/11/27 00:20:26  jak
+/*  Matrix Class has been ported for use with the AT&T cfront compiler version 3
+/*  (with templates).   -jak
 /*
+ * Revision 1.3  1993/11/20  21:53:18  jak
+ * Fixed a bug in the Linked_List_Template to allow it to be correctly
+ * included and used in a library situation.  -jak
+ *
  * Revision 1.2  1993/11/20  06:09:59  jak
  * Bug fixes and optimization turned on.   -jak
  *
@@ -29,7 +33,7 @@
  **/
 // =====================================
 
-static char rcsid_TimeUse_C[] =  "$Id: TimeUse.C,v 1.3 1993/11/20 21:53:18 jak Exp $";
+static char rcsid_TimeUse_C[] =  "$Id: TimeUse.C,v 1.4 1993/11/27 00:20:26 jak Exp $";
 
 #pragma implementation
 
@@ -38,7 +42,7 @@ static char rcsid_TimeUse_C[] =  "$Id: TimeUse.C,v 1.3 1993/11/20 21:53:18 jak E
 #include <sys/time.h>
 #include <sys/resource.h>
 
-extern void Abort( char * );
+extern void Abort( const char * );
 
 TimeUse:: TimeUse( int ident )
 {

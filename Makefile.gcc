@@ -2,13 +2,17 @@
 # Makefile for test of Matrix class
 #
 #  Revision:
-#  $Id: Makefile.gcc,v 1.6 1993/11/20 21:53:12 jak Exp $
+#  $Id: Makefile.gcc,v 1.7 1993/11/27 00:20:20 jak Exp $
 #
 #  History:
 #  $Log: Makefile.gcc,v $
-#  Revision 1.6  1993/11/20 21:53:12  jak
-#  Fixed a bug in the Linked_List_Template to allow it to be correctly
-#  included and used in a library situation.  -jak
+#  Revision 1.7  1993/11/27 00:20:20  jak
+#  Matrix Class has been ported for use with the AT&T cfront compiler version 3
+#  (with templates).   -jak
+#
+# Revision 1.6  1993/11/20  21:53:12  jak
+# Fixed a bug in the Linked_List_Template to allow it to be correctly
+# included and used in a library situation.  -jak
 #
 # Revision 1.5  1993/11/20  06:09:58  jak
 # Bug fixes and optimization turned on.   -jak
@@ -32,7 +36,7 @@
 # =====================================
 
 CC=gcc
-CFLAGS=-ggdb -O2 -DLIBGpp -DGCC -Wall
+CFLAGS=-ggdb -O2 -Wall
 LIBS=-lMatrix -lm -lg++ -liostream 
 INSTALL_LIB=/usr/local/lib
 INSTALL_INC=/usr/local/include

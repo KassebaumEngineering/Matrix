@@ -14,14 +14,18 @@
 // Known Bugs:
 //
 //  Revision:
-/*  $Id: Matrix.H,v 1.10 1993/11/24 00:13:58 jak Exp $
+/*  $Id: Matrix.H,v 1.11 1993/11/27 00:20:25 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.10  1993/11/24 00:13:58  jak
-/*  Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
-/*  deleted in LU_Decmposition. -jak
+/*  Revision 1.11  1993/11/27 00:20:25  jak
+/*  Matrix Class has been ported for use with the AT&T cfront compiler version 3
+/*  (with templates).   -jak
 /*
+ * Revision 1.10  1993/11/24  00:13:58  jak
+ * Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
+ * deleted in LU_Decmposition. -jak
+ *
  * Revision 1.9  1993/11/23  21:06:55  jak
  * Bug Fixes especially for rare cases of NUll Matrices.  -jak
  *
@@ -58,7 +62,7 @@
 
 #ifndef _Matrix_H
 #define _Matrix_H
-static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.10 1993/11/24 00:13:58 jak Exp $";
+static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.11 1993/11/27 00:20:25 jak Exp $";
 
 #pragma interface
 
@@ -67,12 +71,12 @@ static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.10 1993/11/24 00:13:58 jak Ex
 #include <sys/stat.h>
 #include <strings.h>
 
-#include "Linked_List_Template.H"
-
 class Matrix;
 class Composition;
 class LU_Decomposition;
 class IntArray;
+
+#include "Linked_List_Template.H"
 
 const float TINY = 1.0e-20; 	// some small number not equal to zero
 
@@ -160,7 +164,7 @@ public:
     Matrix&  shift_to ( int, int );
 
 // Matrix Information methods
-    inline char* getName( void ) const { return name; };
+    inline const char* getName( void ) const { return &(name[0]); };
     inline void setName( const char* aname ) {
         strncpy(name, aname, MAXNAMELEN-1); 
     };
@@ -204,7 +208,7 @@ public:
 // p = 1 -> 1-norm, p=0 -> infinity norm
     friend float norm ( const Matrix& , float = 2.0 ); 
 
-    friend float determinant ( const Matrix& ); 
+    friend float determinant ( Matrix& ); 
 
 // Comparison Operations
     friend int operator == ( const Matrix&, const Matrix& );
@@ -224,6 +228,7 @@ public:
  //         X = matA * inverse( matB );
  // if the second case occurs, then the alg cannot
  // recognize it. But you can transpose the input to fix it.
+ // --------
     friend Matrix operator / ( Matrix&, Matrix& );
  // --------
 
@@ -231,27 +236,27 @@ public:
     friend Matrix operator * (float, const Matrix&);
     friend inline Matrix operator * (const Matrix &matA, float scalar){
         return (scalar * matA);
-    }
+    };
 
     friend Matrix operator + ( const Matrix &, float );
     friend inline Matrix operator + (float scalar, const Matrix &matA){
         return ( matA + scalar );
-    }
+    };
     friend inline Matrix operator - (const Matrix &matA, float scalar){
         return ( matA + ( - scalar ) );
-    }
+    };
     friend inline Matrix operator - (float scalar, const Matrix &matA){
         return -( matA + scalar );
-    }
+    };
     friend inline Matrix operator - (const Matrix &matA ){
         return (-1.0 * matA);
-    }
+    };
     friend inline Matrix operator / (Matrix &matA, float scalar){
         return ( ( 1.0/scalar ) * matA );
-    }
+    };
     friend inline Matrix operator / (float scalar, Matrix &matA){
         return ( scalar * inverse( matA ) );
-    }
+    };
 
 // Transformations
     friend Matrix transpose( const Matrix &); 

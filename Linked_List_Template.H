@@ -64,10 +64,14 @@
 // ------------------------------------------------------------------
 //  History:
 /*    $Log: Linked_List_Template.H,v $
-/*    Revision 1.3  1993/11/20 21:53:09  jak
-/*    Fixed a bug in the Linked_List_Template to allow it to be correctly
-/*    included and used in a library situation.  -jak
+/*    Revision 1.4  1993/11/27 00:20:17  jak
+/*    Matrix Class has been ported for use with the AT&T cfront compiler version 3
+/*    (with templates).   -jak
 /*
+ * Revision 1.3  1993/11/20  21:53:09  jak
+ * Fixed a bug in the Linked_List_Template to allow it to be correctly
+ * included and used in a library situation.  -jak
+ *
  * Revision 1.2  1993/11/20  02:19:36  jak
  * Added Time and resource usage programs.  Also, the class is now
  * built into a library (libMatrix.a).  The Linked_List now has
@@ -85,11 +89,11 @@
 #ifndef _Linked_List_H
 #define _Linked_List_H
 
-static char rcsid_Linked_List_H[] = "$Id: Linked_List_Template.H,v 1.3 1993/11/20 21:53:09 jak Exp $";
+static char rcsid_Linked_List_H[] = "$Id: Linked_List_Template.H,v 1.4 1993/11/27 00:20:17 jak Exp $";
 
 #pragma interface
 
-//template <class T> class Linked_List;
+template <class T> class Linked_List;
 
 template <class T> class LL_Node {
     friend class Linked_List<T>;
