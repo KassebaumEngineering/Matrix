@@ -13,9 +13,12 @@
 //
 //  History:
 /*    $Log: TimeValue.H,v $
-/*    Revision 1.5  1993/11/30 05:24:48  jak
-/*    Changed the implementation of the TimeValue Class.  -jak
+/*    Revision 1.6  1993/11/30 05:36:39  jak
+/*    A Small fix to the operator /()  -jak
 /*
+ * Revision 1.5  1993/11/30  05:24:48  jak
+ * Changed the implementation of the TimeValue Class.  -jak
+ *
  * Revision 1.4  1993/11/24  03:45:04  jak
  * Added a division operator for time calculation for benchmarking
  * purposes.   -jak
@@ -37,7 +40,7 @@
 #ifndef _TimeValue_H
 #define _TimeValue_H
 
-static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.5 1993/11/30 05:24:48 jak Exp $";
+static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.6 1993/11/30 05:36:39 jak Exp $";
 
 #pragma interface 
 
@@ -66,8 +69,11 @@ public:
     inline long secs( void ) const {
         return (long)floor( the_time );
     };
+    inline double time( void ) const {
+        return the_time;
+    };
     TimeValue&  operator=( const TimeValue& );
-    TimeValue   operator/( const TimeValue& );
+    double      operator/( const TimeValue& );
 
     friend TimeValue   operator+ ( const TimeValue&, const TimeValue&);
     friend TimeValue   operator- ( const TimeValue&, const TimeValue&);

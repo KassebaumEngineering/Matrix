@@ -15,9 +15,12 @@
 //
 // History:
 /*    $Log: TimeValue.C,v $
-/*    Revision 1.5  1993/11/30 05:24:46  jak
-/*    Changed the implementation of the TimeValue Class.  -jak
+/*    Revision 1.6  1993/11/30 05:36:37  jak
+/*    A Small fix to the operator /()  -jak
 /*
+ * Revision 1.5  1993/11/30  05:24:46  jak
+ * Changed the implementation of the TimeValue Class.  -jak
+ *
  * Revision 1.4  1993/11/24  03:45:02  jak
  * Added a division operator for time calculation for benchmarking
  * purposes.   -jak
@@ -36,7 +39,7 @@
  * inc and dec ,methods for the reference count.  -jak
  **/
 //  ************************************************************
-static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.5 1993/11/30 05:24:46 jak Exp $";
+static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.6 1993/11/30 05:36:37 jak Exp $";
 
 #pragma implementation
 
@@ -117,12 +120,12 @@ TimeValue  operator*(const TimeValue& t, double scale )
     return TimeValue( result );
 };
 
-TimeValue  TimeValue::operator/( const TimeValue& t2 )
+double  TimeValue::operator/( const TimeValue& t2 )
 {
     double result;
 
     result = the_time / t2.the_time;
-    return TimeValue( result );
+    return result;
 };
 
 TimeValue  operator/(const TimeValue& t1, double scale )
