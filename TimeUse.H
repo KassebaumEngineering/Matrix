@@ -9,21 +9,24 @@
 //  MY software.  
 //
 //  Revision:
-/*  $Id: TimeUse.H,v 1.1 1993/11/20 02:19:44 jak Exp $
+/*  $Id: TimeUse.H,v 1.2 1993/11/20 06:10:01 jak Exp $
  */
 //  History:
 /*  $Log: TimeUse.H,v $
-/*  Revision 1.1  1993/11/20 02:19:44  jak
-/*  Added Time and resource usage programs.  Also, the class is now
-/*  built into a library (libMatrix.a).  The Linked_List now has
-/*  reference counts and is correctly copied and deleted by the new
-/*  inc and dec ,methods for the reference count.  -jak
-/**/
+/*  Revision 1.2  1993/11/20 06:10:01  jak
+/*  Bug fixes and optimization turned on.   -jak
+/*
+ * Revision 1.1  1993/11/20  02:19:44  jak
+ * Added Time and resource usage programs.  Also, the class is now
+ * built into a library (libMatrix.a).  The Linked_List now has
+ * reference counts and is correctly copied and deleted by the new
+ * inc and dec ,methods for the reference count.  -jak
+ **/
 // =====================================
 
 #ifndef _TimeUse_H
 #define _TimeUse_H
-static char rcsid_TimeUse_H[] =  "$Id: TimeUse.H,v 1.1 1993/11/20 02:19:44 jak Exp $";
+static char rcsid_TimeUse_H[] =  "$Id: TimeUse.H,v 1.2 1993/11/20 06:10:01 jak Exp $";
 
 #include "TimeValue.H"
 #include "Linked_List_Template.H"
@@ -36,10 +39,10 @@ public:
     TimeUse( int = 0 );
     ~TimeUse( void );
 	
-	TimeValue start( int ident );
-	TimeValue restart( int ident );
-	TimeValue look_at( int ident );
-	TimeValue stop( int ident );
+	TimeValue start( int = 0 );
+	TimeValue restart( int  = 0  );
+	TimeValue look_at( int  = 0  );
+	TimeValue stop( int  = 0  );
 	
 };
 

@@ -15,14 +15,17 @@
 //
 // History:
 /*    $Log: TimeValue.C,v $
-/*    Revision 1.1  1993/11/20 02:19:45  jak
-/*    Added Time and resource usage programs.  Also, the class is now
-/*    built into a library (libMatrix.a).  The Linked_List now has
-/*    reference counts and is correctly copied and deleted by the new
-/*    inc and dec ,methods for the reference count.  -jak
-/**/
+/*    Revision 1.2  1993/11/20 06:10:02  jak
+/*    Bug fixes and optimization turned on.   -jak
+/*
+ * Revision 1.1  1993/11/20  02:19:45  jak
+ * Added Time and resource usage programs.  Also, the class is now
+ * built into a library (libMatrix.a).  The Linked_List now has
+ * reference counts and is correctly copied and deleted by the new
+ * inc and dec ,methods for the reference count.  -jak
+ **/
 //  ************************************************************
-static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.1 1993/11/20 02:19:45 jak Exp $";
+static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.2 1993/11/20 06:10:02 jak Exp $";
 
 
 #include "TimeValue.H"
@@ -95,7 +98,7 @@ TimeValue& TimeValue::operator=(const TimeValue& atimeval)
 // Utility operators
 //
 
-TimeValue& operator+( const TimeValue& t1, const TimeValue& t2 )
+TimeValue operator+( const TimeValue& t1, const TimeValue& t2 )
 {
     double result, op2;
     //TimeValue result;
@@ -115,7 +118,7 @@ TimeValue& operator+( const TimeValue& t1, const TimeValue& t2 )
     return TimeValue( result );
 };
 
-TimeValue& operator-( const TimeValue& t1, const TimeValue& t2 )
+TimeValue operator-( const TimeValue& t1, const TimeValue& t2 )
 {
     double result, op2;
 
@@ -171,5 +174,13 @@ TimeValue& time_abs( TimeValue& atime )
         return TimeValue( -atime.seconds, -atime.micro_seconds);
     } else
         return atime;
+};
+
+ostream & operator << (ostream &cbuf, const TimeValue& atime)
+{
+    double time;
+    time = ((double) atime.secs()) + ((double) atime.msecs())/1000000.0 ;
+    cbuf << time << " seconds ";
+    return cbuf;
 };
 

@@ -10,19 +10,22 @@
 //  MY software. 
 //
 //  Revision:
-/*  $Id: TimeUse.C,v 1.1 1993/11/20 02:19:42 jak Exp $
+/*  $Id: TimeUse.C,v 1.2 1993/11/20 06:09:59 jak Exp $
 */
 //  History:
 /*  $Log: TimeUse.C,v $
-/*  Revision 1.1  1993/11/20 02:19:42  jak
-/*  Added Time and resource usage programs.  Also, the class is now
-/*  built into a library (libMatrix.a).  The Linked_List now has
-/*  reference counts and is correctly copied and deleted by the new
-/*  inc and dec ,methods for the reference count.  -jak
-/**/
+/*  Revision 1.2  1993/11/20 06:09:59  jak
+/*  Bug fixes and optimization turned on.   -jak
+/*
+ * Revision 1.1  1993/11/20  02:19:42  jak
+ * Added Time and resource usage programs.  Also, the class is now
+ * built into a library (libMatrix.a).  The Linked_List now has
+ * reference counts and is correctly copied and deleted by the new
+ * inc and dec ,methods for the reference count.  -jak
+ **/
 // =====================================
 
-static char rcsid_TimeUse_C[] =  "$Id: TimeUse.C,v 1.1 1993/11/20 02:19:42 jak Exp $";
+static char rcsid_TimeUse_C[] =  "$Id: TimeUse.C,v 1.2 1993/11/20 06:09:59 jak Exp $";
 
 #include "TimeUse.H"
 #include <stdlib.h>
@@ -51,7 +54,7 @@ TimeValue TimeUse:: start( int ident )
 	
  // new TimeValue is eventually deleted by milestones list
 	rtn = new TimeValue( rusg.ru_utime ); 
-		
+
 	milestones.add( rtn , ident );
 	
 	return *rtn;
@@ -75,7 +78,10 @@ TimeValue TimeUse:: look_at( int ident )
 	now = TimeValue( rusg.ru_utime ); 
 	then = milestones.find( ident );
 
-    return (now - *then);
+
+    now = now - (*then);
+
+    return now;
 };
 
 TimeValue TimeUse:: stop( int ident )

@@ -2,15 +2,18 @@
 # Makefile for test of Matrix class
 #
 #  Revision:
-#  $Id: Makefile.gcc,v 1.4 1993/11/20 02:19:37 jak Exp $
+#  $Id: Makefile.gcc,v 1.5 1993/11/20 06:09:58 jak Exp $
 #
 #  History:
 #  $Log: Makefile.gcc,v $
-#  Revision 1.4  1993/11/20 02:19:37  jak
-#  Added Time and resource usage programs.  Also, the class is now
-#  built into a library (libMatrix.a).  The Linked_List now has
-#  reference counts and is correctly copied and deleted by the new
-#  inc and dec ,methods for the reference count.  -jak
+#  Revision 1.5  1993/11/20 06:09:58  jak
+#  Bug fixes and optimization turned on.   -jak
+#
+# Revision 1.4  1993/11/20  02:19:37  jak
+# Added Time and resource usage programs.  Also, the class is now
+# built into a library (libMatrix.a).  The Linked_List now has
+# reference counts and is correctly copied and deleted by the new
+# inc and dec ,methods for the reference count.  -jak
 #
 # Revision 1.3  1993/11/18  07:29:22  jak
 # Added alot of increased functionality, including support for
@@ -25,7 +28,7 @@
 # =====================================
 
 CC=gcc
-CFLAGS=-ggdb -O -DLIBGpp -DGCC -Wall
+CFLAGS=-ggdb -pg -O2 -DLIBGpp -DGCC -Wall
 LIBS=-lMatrix -lm -lg++ -liostream 
 INSTALL_LIB=/usr/local/lib
 INSTALL_INC=/usr/local/include
@@ -47,7 +50,7 @@ matrixtest.o: matrixtest.C Matrix.H Linked_List_Template.H
 	$(CC) -c $(CFLAGS) matrixtest.C
 
 Matrix.o: Matrix.C Matrix.H Linked_List_Template.H
-	$(CC) -c $(CFLAGS) Matrix.C
+	$(CC) -c $(CFLAGS) -fexpensive-optimizations Matrix.C
 
 TimeValue.o: TimeValue.C TimeValue.H
 	$(CC) -c $(CFLAGS) TimeValue.C

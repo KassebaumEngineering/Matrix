@@ -13,18 +13,22 @@
 //
 //  History:
 /*    $Log: TimeValue.H,v $
-/*    Revision 1.1  1993/11/20 02:19:47  jak
-/*    Added Time and resource usage programs.  Also, the class is now
-/*    built into a library (libMatrix.a).  The Linked_List now has
-/*    reference counts and is correctly copied and deleted by the new
-/*    inc and dec ,methods for the reference count.  -jak
-/**/
+/*    Revision 1.2  1993/11/20 06:10:03  jak
+/*    Bug fixes and optimization turned on.   -jak
+/*
+ * Revision 1.1  1993/11/20  02:19:47  jak
+ * Added Time and resource usage programs.  Also, the class is now
+ * built into a library (libMatrix.a).  The Linked_List now has
+ * reference counts and is correctly copied and deleted by the new
+ * inc and dec ,methods for the reference count.  -jak
+ **/
 //  ******************************************************************
 #ifndef _TimeValue_H
 #define _TimeValue_H
 
-static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.1 1993/11/20 02:19:47 jak Exp $";
+static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.2 1993/11/20 06:10:03 jak Exp $";
 
+#include <iostream.h>
 #include <sys/types.h>
 #include <sys/time.h>
 //FYI-   struct timeval { long tv_sec;  long tv_usec; };
@@ -51,12 +55,14 @@ public:
     };
     TimeValue&  operator=( const TimeValue& );
 
-    friend TimeValue&   operator+ ( const TimeValue&, const TimeValue&);
-    friend TimeValue&   operator- ( const TimeValue&, const TimeValue&);
-    friend int          operator>=( const TimeValue&, const TimeValue&);
-    friend int          operator<=( const TimeValue&, const TimeValue&);
+    friend TimeValue   operator+ ( const TimeValue&, const TimeValue&);
+    friend TimeValue   operator- ( const TimeValue&, const TimeValue&);
+    friend int         operator>=( const TimeValue&, const TimeValue&);
+    friend int         operator<=( const TimeValue&, const TimeValue&);
 
     friend TimeValue&   time_abs ( TimeValue& );
+
+    friend ostream & operator << (ostream &, const TimeValue&);
 
 };
 
