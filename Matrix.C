@@ -2,6 +2,10 @@
 // Implementation of 2-D MAtrix Class
 //
 
+#ifdef LIBGpp
+#include <new.h>
+#endif
+
 #include <stdlib.h>
 #include <math.h>
 #include "Matrix.H"
@@ -13,86 +17,79 @@ void Abort( char *s ){
 
 Matrix::Matrix(unsigned short r, unsigned short c)
 {
-    unsigned short i;
+    int i;
     float *newmat;
 
     myRows = r;
     myColumns = c;
 
-    newmat = (float *) new float[ r ][ c ];
-    m = new float (*)[ r ];
+    newmat = (float *) new float[ r * c ];
+    m = (float **) new char[ sizeof(float*) * r ];
 
     if (newmat == (float  *)0 ) cerr << "newmat == 0 !\n";	
     if (m      == (float **)0 ) cerr << "m == 0 !\n";
 
-    for (i = 0; i< r; i++){
+    for (i = 0; i < (int)r; i++){
         m[i] = &(newmat[i*c]);
     }
 
-    for( i=0; i<myRows*myColumns; i++){
+    for( i=0; i < (int)r*(int)c; i++){
         *newmat++ = 0.0;
     }
 };
 
 Matrix::Matrix(Matrix &matA)    // Copy Constructor
 {
-    unsigned short i, r, c;
+    int i;
     float *newmat, *ptr;
 
     myRows = matA.rows();
     myColumns = matA.cols();
 
-    newmat = (float *) new float[ myRows ][ myColumns ];
-    m = new float (*)[ myRows ];
+    newmat = (float *) new float[ myRows * myColumns ];
+    m = (float **) new char[ sizeof(float*) * myRows];
 
     if (newmat == (float  *)0 ) cerr << "newmat == 0 !\n";	
     if (m      == (float **)0 ) cerr << "m == 0 !\n";
 	
-    for (i = 0; i< myRows; i++){
+    for (i = 0; i< (int)myRows; i++){
         m[i] = &(newmat[ i * myColumns ]);
     }
 
     ptr = matA[0];
-    for( i=0; i<myRows*myColumns; i++){
+    for( i=0; i < (int)myRows*(int)myColumns; i++){
         *newmat++ = *ptr++;
     }
 };
 
 Matrix::~Matrix( void )
 {
-    unsigned short i;
-
     delete  *m;
     delete  m;
 };
 
-Matrix operator=(Matrix &matA, Matrix &matB)   // performs a copy
+Matrix& Matrix::operator=(Matrix &matB)   // performs a copy
 {
     Matrix *result;
-    register short int r,c, Rows, Cols;
+    register short int r,c;
     float *ptr_A, *ptr_B;
 
-    result = &matA;
-    if ((matB.rows() != matA.rows()) || (matB.cols() != matA.cols())){
+    result = this;
+    if ((matB.rows() != myRows) || (matB.cols() != myColumns)){
         delete result;
         result = new Matrix( matB.rows(), matB.cols() );
     }
-    for( r=0; r<matA.rows(); r++){
+    for( r=0; r<(int)myRows; r++){
         ptr_A = (*result)[r];
         ptr_B = matB[r];
-        for( c=0; c<matB.cols(); c++)
+        for( c=0; c<(int)matB.cols(); c++)
             *ptr_A++ = *ptr_B++;
     }
 
     return (*result);
 };
 
-Matrix *operator=(Matrix *matA, Matrix &matB)  // returns a reference
-{
-    return (matA = &matB);
-};
-
-Matrix transpose( Matrix &matA )
+Matrix& transpose( Matrix &matA )
 {
     register float *ptr_r;
     register unsigned short r,c;
@@ -111,7 +108,7 @@ Matrix transpose( Matrix &matA )
     return (*result);
 };
 
-Matrix operator+( Matrix &matA, Matrix &matB )
+Matrix& operator+( Matrix &matA, Matrix &matB )
 {
     Matrix *result;
     register short int r,c, Rows, Cols;
@@ -135,7 +132,7 @@ Matrix operator+( Matrix &matA, Matrix &matB )
     return (*result);
 };
 
-Matrix operator-( Matrix &matA, Matrix &matB )
+Matrix& operator-( Matrix &matA, Matrix &matB )
 {
     Matrix *result;
     register short int r,c, Rows, Cols;
@@ -159,7 +156,7 @@ Matrix operator-( Matrix &matA, Matrix &matB )
     return (*result);
 };
 
-Matrix operator*( Matrix &matA, Matrix &matB )
+Matrix& operator*( Matrix &matA, Matrix &matB )
 {    
     Matrix *result;
     register unsigned short r,c,q;
@@ -203,7 +200,7 @@ Matrix operator*( Matrix &matA, Matrix &matB )
     return (*result * 0.0);
 };
 
-Matrix operator*( float scalar, Matrix &matA )
+Matrix& operator*( float scalar, Matrix &matA )
 {
     Matrix *result;
     register short int r,c, Rows, Cols;
@@ -217,7 +214,7 @@ Matrix operator*( float scalar, Matrix &matA )
     return (*result);
 };
 
-Matrix operator+( Matrix &matA, float scalar){
+Matrix& operator+( Matrix &matA, float scalar){
     Matrix *result;
     register short int r,c, Rows, Cols;
 
@@ -230,35 +227,57 @@ Matrix operator+( Matrix &matA, float scalar){
     return (*result);
 };
 
-Matrix map( float (*f)( ), Matrix &matA){
+#ifndef GCC
+Matrix& map( float (*f)(float), Matrix &matA){
+#else
+Matrix& map( float (*f)( ), Matrix &matA){
+#endif
     Matrix *result;
     register short int r,c, Rows, Cols;
+
+#ifdef GCC
     float (*func)( float ) = (float (*)( float ))f;
-
+#endif
     result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
 
     for( r=0; r<Rows; r++)
         for( c=0; c<Cols; c++)
+#ifdef GCC
             (*result)[r][c] = func( matA[r][c] );
+#else
+            (*result)[r][c] = f( matA[r][c] );
+#endif
 
     return (*result);
 };
 
-Matrix map( float (*f)( ), Matrix &matA, Matrix &matB){
+#ifndef GCC
+Matrix& map( float (*f)(float,float), Matrix &matA, Matrix &matB){
+#else
+Matrix& map( float (*f)( ), Matrix &matA, Matrix &matB){
+#endif
+
     Matrix *result;
     register short int r,c, Rows, Cols;
+
+#ifdef GCC
     float (*func)( float, float ) = (float (*)( float, float ))f;
+#endif
 
     result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
 
     for( r=0; r<Rows; r++)
         for( c=0; c<Cols; c++)
+#ifdef GCC
             (*result)[r][c] = func( matA[r][c] , matB[r][c]);
+#else
+            (*result)[r][c] = f( matA[r][c] , matB[r][c]);
+#endif
 
     return (*result);
 };
 
-Matrix operator^( Matrix &matA, Matrix &matB){
+Matrix& operator^( Matrix &matA, Matrix &matB){
     Matrix *result;
     register short int r,c, Rows, Cols;
 
@@ -271,7 +290,7 @@ Matrix operator^( Matrix &matA, Matrix &matB){
     return (*result);
 };
 
-Matrix operator%( Matrix &matA, Matrix &matB){
+Matrix& operator%( Matrix &matA, Matrix &matB){
     Matrix *result;
     register short int r,c, Rows, Cols;
 
@@ -314,7 +333,7 @@ istream& operator >> (istream &cbuf, Matrix &matA)
     return cbuf;
 };
 
-Matrix operator / (Matrix &matA, Matrix &matB)
+Matrix& operator / (Matrix &matA, Matrix &matB)
 {
   // solve X = matA / matB
   // means :
@@ -336,9 +355,9 @@ Matrix operator / (Matrix &matA, Matrix &matB)
     }
 };
 
-Matrix inverse( Matrix &matA)
+Matrix& inverse( Matrix &matA)
 {
-    register unsigned short r,c;
+    register unsigned short r;
     unsigned short size;
 
     if ((size = matA.rows()) != matA.cols())
@@ -363,7 +382,6 @@ LU_Decomp::LU_Decomp( Matrix &matA )
 // as described by Numerical Recipes in C for the ludcmp() routine.
 
     register unsigned short row, col, k;
-    unsigned short myRows, myColumns;
     float *row_scaling;
     float *m,*ptr;
 
@@ -375,8 +393,8 @@ LU_Decomp::LU_Decomp( Matrix &matA )
 // Constructor
 //
     size = matA.rows();
-    m = (float *) new float[ size ][ size ];
-    lumat = new float (*)[ size ];
+    m = (float *) new (float[ size * size ]);
+    lumat = (float **) new char[ sizeof(float*) * size];
     
     for ( row=0; row<size; row++){
         lumat[row] = &( m[ row*size ] );
@@ -392,7 +410,7 @@ LU_Decomp::LU_Decomp( Matrix &matA )
     permute_parity = 1.0;
 
     ptr = matA[0];
-    for( k=0; k<size*size; k++){
+    for( k=0; (int)k<(int)size*(int)size; k++){
         *m++ = *ptr++;
     }
 //
@@ -470,15 +488,15 @@ LU_Decomp::~LU_Decomp()
     delete  row_permute;
 };
 
-Matrix LU_Decomp::L()
+Matrix& LU_Decomp::L()
 {    
     Matrix *result;
-    register short int row, col, Rows, Cols;
+    register short int row, col;
 
     result = new Matrix( size, size );
 
-    for( row=0; row<size; row++ )
-        for( col=0; col<size; col++ )
+    for( row=0; (int)row<(int)size; row++ )
+        for( col=0; (int)col<(int)size; col++ )
             if( row > col )
                 (*result)[row][col] = lumat[row][col];
             else if ( row == col )
@@ -488,10 +506,10 @@ Matrix LU_Decomp::L()
 //
 // Return the L matrix in its permuted row order.
 //
-    for( row=0; row<size; row++){
+    for( row=0; (int)row<(int)size; row++){
         float tempval;
         if (row != row_permute[ row ])
-            for( col=0; col<size; col++){
+            for( col=0; (int)col<(int)size; col++){
                 tempval = (*result)[row][col];
                 (*result)[row][col] = (*result)[row_permute[ row ]][col];
                 (*result)[row_permute[ row ]][col] = tempval;
@@ -501,15 +519,15 @@ Matrix LU_Decomp::L()
     return (*result);
 };
 
-Matrix LU_Decomp::U()
+Matrix& LU_Decomp::U()
 {
     Matrix *result;
-    register short int row, col, Rows, Cols;
+    register short int row, col;
 
     result = new Matrix( size, size );
 
-    for( row=0; row<size; row++ )
-        for( col=0; col<size; col++ )
+    for( row=0; (int)row<(int)size; row++ )
+        for( col=0; (int)col<(int)size; col++ )
             if( row <= col )
                 (*result)[row][col] = lumat[row][col];
             else  // ( row > col )
@@ -520,7 +538,7 @@ Matrix LU_Decomp::U()
     return (*result);
 };
 
-Matrix LU_Decomp::solve_for( Matrix &matA )
+Matrix& LU_Decomp::solve_for( Matrix &matA )
 {
     Matrix *result;
     register short row, col;
@@ -530,7 +548,7 @@ Matrix LU_Decomp::solve_for( Matrix &matA )
     Cols = matA.cols();
     result = new Matrix( matA );
 
-    for( col=0; col<Cols; col++ ){
+    for( col=0; (int)col<(int)Cols; col++ ){
         int index;
         register unsigned short k;
         unsigned short row_p;
@@ -539,13 +557,13 @@ Matrix LU_Decomp::solve_for( Matrix &matA )
 // forward substitution
 //
         index = -1;
-        for( row=0; row<Rows; row++ ){
+        for( row=0; (int)row<(int)Rows; row++ ){
             row_p = row_permute[row];
 // --
             sum = (*result)[ row_p ][ col ];
             (*result)[ row_p ][ col ] = (*result)[ row ][ col ];
             if (index >= 0)
-                for( k=index; k<row;  k++) 
+                for( k=index; (int)k<(int)row;  k++) 
                     sum -= lumat[row][k] * (*result)[k][col];
             else if (sum != 0.0)
                 index = row;
@@ -554,7 +572,7 @@ Matrix LU_Decomp::solve_for( Matrix &matA )
 //
 // backsubstitution
 //
-        for( row=Rows-1; row>=0; row--){
+        for( row=Rows-1; (int)row>=0; row--){
             sum = (*result)[row][col];
             for( k=row+1; k<Rows; k++){
                 sum -= lumat[row][k] * (*result)[k][col];

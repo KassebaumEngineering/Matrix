@@ -1,14 +1,22 @@
 
-#include <std.h>
 #include <iostream.h>
-#include <String.h>
-#include <Uniform.h>
-#include <ACG.h>
 #include <math.h>
 #include "Matrix.H"
 
+#ifdef LIBGpp
+#include <std.h>
+#include <String.h>
+#include <Uniform.h>
+#include <ACG.h>
+
 ACG gen(100, 20);
 Uniform rnd(-1.0,1.0,&gen);
+
+#else
+#include <rand48.h>
+
+#endif
+
 
 Matrix X1(1,100), X2(1,100), X3(1,100), X4(1,100), Y(1,100);
 Matrix Z11(1,100), Z22(1,100), Z33(1,100), Z44(1,100);
@@ -61,13 +69,24 @@ main()
 {
     Matrix W1(1,6), W2(1,6), W3(1,6);
     float E, Elast;
-    int i,j;
+    int i;
+
+#ifndef LIBGpp
+    srand48( 10348 );
+#endif
 
     for (i=0; i<100; i++) {
+#ifdef LIBGpp
         X1[0][i] = rnd();
         X2[0][i] = rnd();
         X3[0][i] = rnd();
         X4[0][i] = rnd();
+#else
+        X1[0][i] = (float) (20.0 * drand48() - 10.0);
+        X2[0][i] = (float) (20.0 * drand48() - 10.0);
+        X3[0][i] = (float) (20.0 * drand48() - 10.0);
+        X4[0][i] = (float) (20.0 * drand48() - 10.0);
+#endif
     }
    
     Y = X1*3.0 + X2*2.0 + X1^X1*1.0
@@ -271,18 +290,18 @@ main()
 //   Weights:
 //
     cout << "W12 = \n";
-    cout <<  W1 ;
+    cout <<  W12 ;
 
     cout << "W34 = \n";
-    cout <<  W2 ;
+    cout <<  W34 ;
 
     cout << "W56 = \n";
-    cout <<  W3 ;
+    cout <<  W56 ;
 
-    cout << "E = " << Elast << "\n";
+    cout << "E = " << E << "\n";
     cout << "Error vector = \n";
-        Y12 = W1 * X12;
-        Y34 = W2 * X34;
+        Y12 = W12 * X12;
+        Y34 = W34 * X34;
     // node 5-6:   SECOND LAYER NODE
         X5 = Y12;
         X6 = Y34;
@@ -295,6 +314,6 @@ main()
         for (i=0; i<100; i++) X56[3][i] = Z56[0][i];
         for (i=0; i<100; i++) X56[4][i] = Z55[0][i];
         for (i=0; i<100; i++) X56[5][i] = Z66[0][i];
-        Y56 = W3 * X56;
+        Y56 = W56 * X56;
     cout << transpose(Y - Y56);
 };

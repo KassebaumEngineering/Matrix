@@ -23,55 +23,59 @@ public:
 // Type Conversion Operator
 
 // Matrix Information methods
-    inline unsigned short rows( void ){ return myRows;    };
-    inline unsigned short cols( void ){ return myColumns; };
-    inline float* operator [] ( unsigned short i ){ return m[ i ]; };
+    inline unsigned short rows( void ){ return myRows;    }
+    inline unsigned short cols( void ){ return myColumns; }
+    inline float* operator [] ( unsigned short i ){ return m[ i ]; }
 
 // Matrix - Matrix Operations
-    friend Matrix operator + (Matrix &, Matrix &);
-    friend Matrix operator - (Matrix &, Matrix &);
-    friend Matrix operator * (Matrix &, Matrix &);
-    friend Matrix operator / (Matrix &, Matrix &);
+    friend Matrix& operator + (Matrix &, Matrix &);
+    friend Matrix& operator - (Matrix &, Matrix &);
+    friend Matrix& operator * (Matrix &, Matrix &);
+    friend Matrix& operator / (Matrix &, Matrix &);
 
 // Scalar - Matrix Operations 
-    friend Matrix operator * (float, Matrix &);
-    friend inline Matrix operator * (Matrix &matA, float scalar){
+    friend Matrix& operator * (float, Matrix &);
+    friend inline Matrix& operator * (Matrix &matA, float scalar){
         return (scalar * matA);
-    };
+    }
 
-    friend Matrix operator + ( Matrix &, float );
-    friend inline Matrix operator + ( float scalar, Matrix &matA){
+    friend Matrix& operator + ( Matrix &, float );
+    friend inline Matrix& operator + ( float scalar, Matrix &matA){
         return ( matA + scalar );
-    };
-    friend inline Matrix operator - ( Matrix &matA, float scalar){
+    }
+    friend inline Matrix& operator - ( Matrix &matA, float scalar){
         return ( matA + ( - scalar ) );
-    };
-    friend inline Matrix operator - ( float scalar, Matrix &matA){
-        return ( - matA + scalar );
-    };
-    friend inline Matrix operator - (Matrix &matA ){
+    }
+    friend inline Matrix& operator - ( float scalar, Matrix &matA){
+        return -( matA + scalar );
+    }
+    friend inline Matrix& operator - (Matrix &matA ){
         return (-1.0 * matA);
-    };
-    friend inline Matrix operator / (Matrix &matA, float scalar){
-        return ( matA * ( 1.0/scalar ) );
-    };
-    friend inline Matrix operator / (float scalar, Matrix &matA){
-        return scalar * inverse( matA );
-    };
+    }
+    friend inline Matrix& operator / (Matrix &matA, float scalar){
+        return ( ( 1.0/scalar ) * matA );
+    }
+    friend inline Matrix& operator / (float scalar, Matrix &matA){
+        return ( scalar * inverse( matA ) );
+    }
 
 // Assignment Operations
-    friend Matrix  operator = (Matrix &, Matrix &);
-    friend Matrix *operator = (Matrix *, Matrix &);
+    Matrix&  operator = (Matrix &);
 
 // Transformations
-    friend Matrix transpose( Matrix &); 
-    friend Matrix inverse( Matrix &);
+    friend Matrix& transpose( Matrix &); 
+    friend Matrix& inverse( Matrix &);
 
 // Matrix elementwise functional mappings
-    friend Matrix operator ^ ( Matrix &, Matrix &);  // elementwise multiply
-    friend Matrix operator % ( Matrix &, Matrix &);  // elementwise divide
-    friend Matrix map ( float (*)(), Matrix &, Matrix &);
-    friend Matrix map ( float (*)(), Matrix &);
+    friend Matrix& operator ^ ( Matrix &, Matrix &);  // elementwise multiply
+    friend Matrix& operator % ( Matrix &, Matrix &);  // elementwise divide
+#ifndef GCC
+    friend Matrix& map ( float (*)( float, float ), Matrix &, Matrix &);
+    friend Matrix& map ( float (*)( float ), Matrix &);
+#else
+    friend Matrix& map ( float (*)(), Matrix &, Matrix &);
+    friend Matrix& map ( float (*)(), Matrix &);
+#endif
 
 // Input Output
     friend ostream& operator << (ostream &, Matrix &);
@@ -91,10 +95,11 @@ public:
     LU_Decomp( Matrix & );
     ~LU_Decomp();
 
-    Matrix L( void );
-    Matrix U( void );
-    Matrix solve_for( Matrix & );
+    Matrix& L( void );
+    Matrix& U( void );
+    Matrix& solve_for( Matrix & );
 
 };
 
 #endif // _Matrix_H
+

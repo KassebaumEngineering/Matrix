@@ -1,5 +1,8 @@
 
+#ifdef LIBGpp
 #include <std.h>
+#endif
+
 #include <iostream.h>
 #include "Matrix.H"
 
@@ -10,7 +13,6 @@ main()
 {
     Matrix A(3,3), B(2,3), C(2,2), D(2,1), E(3,1), F(2,2);
     LU_Decomp *LU;
-    unsigned int r,c;
 
     A[0][0] = 1; A[0][1] = 2; A[0][2] = -3;
     A[1][0] = 2; A[1][1] = -1; A[1][2] = 4;
