@@ -12,23 +12,26 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: matrixtest.C,v 1.4 1993/11/18 07:29:26 jak Exp $
+/*  $Id: matrixtest.C,v 1.5 1993/11/20 03:18:46 jak Exp $
  */
 //  History:
 /*  $Log: matrixtest.C,v $
-/*  Revision 1.4  1993/11/18 07:29:26  jak
-/*  Added alot of increased functionality, including support for
-/*  non-zero aligned matrices.  This supports dealing with
-/*  arbitrary matrix partitions.  Also, LU decompositions are
-/*  stored with the matrices the derived from, and are recovered
-/*  rather than re-computed if a matrix is re-used.   -jak
+/*  Revision 1.5  1993/11/20 03:18:46  jak
+/*  Added the matrix determinant function.  -jak
 /*
+ * Revision 1.4  1993/11/18  07:29:26  jak
+ * Added alot of increased functionality, including support for
+ * non-zero aligned matrices.  This supports dealing with
+ * arbitrary matrix partitions.  Also, LU decompositions are
+ * stored with the matrices the derived from, and are recovered
+ * rather than re-computed if a matrix is re-used.   -jak
+ *
  * Revision 1.3  1993/11/15  20:29:42  jak
  * Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
  **/
 // =====================================
 
-static char rcsid_MAIN_C[] =  "$Id: matrixtest.C,v 1.4 1993/11/18 07:29:26 jak Exp $";
+static char rcsid_MAIN_C[] =  "$Id: matrixtest.C,v 1.5 1993/11/20 03:18:46 jak Exp $";
 
 #ifdef LIBGpp
 #include <std.h>
@@ -174,6 +177,8 @@ main()
     cout << "norm( inverse(A), 2.0 ) = " << norm(inverse(A), 2.0 ) << "\n" ;
     cout << "norm( inverse(A), 3.0 ) = " << norm(inverse(A), 3.0 ) << "\n" ;
 
+    cout << "determinant( A ) =  ";
+    cout << determinant( A ) << "\n\n" ;
 
     cout << "Ashift_to(1,2) + B = \n";
     cout <<  A + B ;

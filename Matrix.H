@@ -12,16 +12,19 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.H,v 1.5 1993/11/20 02:19:41 jak Exp $
+/*  $Id: Matrix.H,v 1.6 1993/11/20 03:18:45 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.5  1993/11/20 02:19:41  jak
-/*  Added Time and resource usage programs.  Also, the class is now
-/*  built into a library (libMatrix.a).  The Linked_List now has
-/*  reference counts and is correctly copied and deleted by the new
-/*  inc and dec ,methods for the reference count.  -jak
+/*  Revision 1.6  1993/11/20 03:18:45  jak
+/*  Added the matrix determinant function.  -jak
 /*
+ * Revision 1.5  1993/11/20  02:19:41  jak
+ * Added Time and resource usage programs.  Also, the class is now
+ * built into a library (libMatrix.a).  The Linked_List now has
+ * reference counts and is correctly copied and deleted by the new
+ * inc and dec ,methods for the reference count.  -jak
+ *
  * Revision 1.4  1993/11/18  07:29:25  jak
  * Added alot of increased functionality, including support for
  * non-zero aligned matrices.  This supports dealing with
@@ -36,7 +39,7 @@
 
 #ifndef _Matrix_H
 #define _Matrix_H
-static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.5 1993/11/20 02:19:41 jak Exp $";
+static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.6 1993/11/20 03:18:45 jak Exp $";
 
 #include <iostream.h>
 #include <sys/types.h>
@@ -178,6 +181,8 @@ public:
 // p = 1 -> 1-norm, p=0 -> infinity norm
     friend float norm ( const Matrix& , float = 2.0 ); 
 
+    friend float determinant ( const Matrix& ); 
+
 // Comparison Operations
     friend int operator == ( const Matrix&, const Matrix& );
 
@@ -312,6 +317,8 @@ public:
         lumat.shift_to( fr, fc );
         return *this;
     };
+
+    float determinant ( void );
 
     virtual Matrix operator[] ( int  ) const;
     virtual Matrix solve_for ( const Matrix & );

@@ -12,16 +12,19 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.C,v 1.5 1993/11/20 02:19:39 jak Exp $
+/*  $Id: Matrix.C,v 1.6 1993/11/20 03:18:43 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.5  1993/11/20 02:19:39  jak
-/*  Added Time and resource usage programs.  Also, the class is now
-/*  built into a library (libMatrix.a).  The Linked_List now has
-/*  reference counts and is correctly copied and deleted by the new
-/*  inc and dec ,methods for the reference count.  -jak
+/*  Revision 1.6  1993/11/20 03:18:43  jak
+/*  Added the matrix determinant function.  -jak
 /*
+ * Revision 1.5  1993/11/20  02:19:39  jak
+ * Added Time and resource usage programs.  Also, the class is now
+ * built into a library (libMatrix.a).  The Linked_List now has
+ * reference counts and is correctly copied and deleted by the new
+ * inc and dec ,methods for the reference count.  -jak
+ *
  * Revision 1.4  1993/11/18  07:29:23  jak
  * Added alot of increased functionality, including support for
  * non-zero aligned matrices.  This supports dealing with
@@ -34,7 +37,7 @@
  **/
 // =====================================
 
-static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.5 1993/11/20 02:19:39 jak Exp $";
+static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.6 1993/11/20 03:18:43 jak Exp $";
 
 
 #ifdef LIBGpp
@@ -518,6 +521,19 @@ float norm ( const Matrix& matA, float p )
 
     return (float)max_val;
 };
+
+float determinant ( const Matrix& matA )
+{
+    LU_Decomposition lu;
+    unsigned int size;
+
+    if ((size = matA.rows()) != matA.cols())
+        Abort("determinant( const Matrix& ):Singular! - Matrix Argument is not square!");
+
+    lu = LU_Decomposition( matA );
+    
+    return lu.determinant();
+}; 
 
 // Comparison Operations
 int operator == ( const Matrix& matA, const Matrix&matB )
@@ -1107,6 +1123,19 @@ Matrix LU_Decomposition::solve_for( const Matrix &matA )
     }
 
     result.setName("Solution");
+    return result;
+};
+
+float  LU_Decomposition:: determinant() 
+{
+    register int i, col_to_row;
+    float result;
+
+    col_to_row = lumat.firstrow() - lumat.firstcol();
+    result = 1.0;
+    for(i=lumat.firstrow(); i< lumat.firstrow()+lumat.rows();i++)
+        result *= lumat[i+col_to_row][i];
+
     return result;
 };
 
