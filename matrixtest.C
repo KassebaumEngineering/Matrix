@@ -12,16 +12,23 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: matrixtest.C,v 1.3 1993/11/15 20:29:42 jak Exp $
+/*  $Id: matrixtest.C,v 1.4 1993/11/18 07:29:26 jak Exp $
  */
 //  History:
 /*  $Log: matrixtest.C,v $
-/*  Revision 1.3  1993/11/15 20:29:42  jak
-/*  Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
-/**/
+/*  Revision 1.4  1993/11/18 07:29:26  jak
+/*  Added alot of increased functionality, including support for
+/*  non-zero aligned matrices.  This supports dealing with
+/*  arbitrary matrix partitions.  Also, LU decompositions are
+/*  stored with the matrices the derived from, and are recovered
+/*  rather than re-computed if a matrix is re-used.   -jak
+/*
+ * Revision 1.3  1993/11/15  20:29:42  jak
+ * Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
+ **/
 // =====================================
 
-static char rcsid_C[] =  "$Id: matrixtest.C,v 1.3 1993/11/15 20:29:42 jak Exp $";
+static char rcsid_MAIN_C[] =  "$Id: matrixtest.C,v 1.4 1993/11/18 07:29:26 jak Exp $";
 
 #ifdef LIBGpp
 #include <std.h>
@@ -38,11 +45,11 @@ main()
 {
     Matrix A(3,3), B(2,3), C(2,2), D(2,1), E(3,1), F(2,2);
     Matrix *Big;
-    LU_Decomp *LU;
+    LU_Decomposition *anLU;
 
     A[0][0] = 1; A[0][1] = 2; A[0][2] = -3;
     A[1][0] = 2; A[1][1] = -1; A[1][2] = 4;
-    A[2][0] = 4; A[2][1] = 3; A[2][2] = -2;
+    A[2][0] = 4; A[2][1] = 3; A[2][2] = 2;
 
     B[0][0] = 1; B[0][1] = 2; B[0][2] = 3;
     B[1][0] = 4; B[1][1] = 5; B[1][2] = 6;
@@ -50,12 +57,12 @@ main()
     C[0][0] = 2; C[0][1] = 3;
     C[1][0] = 5; C[1][1] = 7;
 
-    D[0][0] = 1;
-    D[1][0] = 3;
+    D[0][0] = 1; // D[0][1] = 1;
+    D[1][0] = 3; // D[1][1] = 3;
 
-    E[0][0] = 6;
-    E[1][0] = 2;
-    E[2][0] = 14;
+    E[0][0] = 6; //E[0][1] = 6;  E[0][2] = 6;
+    E[1][0] = 2; //E[1][1] = 2;  E[1][2] = 2;
+    E[2][0] = 14;//E[2][1] = 14; E[2][2] = 14;
 
     F[0][0] = 2; F[0][1] = 5;
     F[1][0] = 1; F[1][1] = 3;
@@ -90,41 +97,107 @@ main()
     cout << "map( divide, A, A) = \n";
     cout << ( map( divide, A, A ) );
 
-    cout << "A ^ A = \n";
-    cout << (A ^ A);
+    cout << "A & A = \n";
+    cout << (A & A);
 
     cout << "A % A = \n";
     cout << (A % A);
 
-    cout << "LU_Decomp( A ) = \n";
-    LU = new LU_Decomp( A );
-    cout << (LU->L()) << "*\n\n" << (LU->U());
+    cout << "Identity(3) = \n";
+    cout <<  Identity(3);
 
-    cout << "L * U = \n";
-    cout << ( LU->L() * LU->U() );
+    cout << "UpperTriangle(3) = \n";
+    cout <<  UpperTriangle(3);
 
-    cout << "LU->solve_for( E ) = \n";
-    cout << (LU->solve_for( E ));
+    cout << "LowerTriangle(3) = \n";
+    cout <<  LowerTriangle(3);
+
+    cout << "LU_Decomposition( A ) = \n";
+    anLU =  new LU_Decomposition( A ) ;
+    cout << (*anLU)[ P_OF_LU ]  << "*\n\n"<< ((*anLU)[ L_OF_LU ]) << "*\n\n" << ((*anLU)[ U_OF_LU ]);
+
+    cout << "P * L * U = \n";
+    cout << ( (*anLU)[ P_OF_LU ] * (*anLU)[ L_OF_LU ] * (*anLU)[ U_OF_LU ] );
+
+    cout << "anLU->solve_for( E ) = \n";
+    cout << (anLU->solve_for( E ));
+
+    cout <<  "E =" << "\n";
+    cout <<  E  <<"\n";
+
+    cout << "A * (anLU->solve_for( E )) =" <<"\n";
+    cout << (A * (anLU->solve_for( E ))) <<"\n";
 
     cout << "D / C  = \n";
     cout << ( D/C );
 
+    cout << "inverse(C) * D = \n";
+    cout << inverse(C) * D;
+
     cout << "1.0 / F = \n";
     cout << (1.0 / F);
 
-    {
-        int i,j;
+    cout << "inverse(F) = \n";
+    cout << inverse(F);
 
-        Big = new Matrix(100,100);
-        for(i=0;i<100;i++)
-            for(j=0;j<100;j++)
-                (*Big)[i][j] = (i==j)?1:0;
+    cout << "inverse(A) = \n";
+    cout << inverse(A);
+
+    cout << "1.0 / A = \n";
+    cout << (1.0 / A);
+
+    cout << "inverse(A) * A = \n";
+    cout << inverse(A) * A;
+
+    cout << "A.shift_to(1,2) = \n";
+    A.shift_to(1,2);
+    cout << A;
+
+    cout << "inverse(A.shift_to(1,2)) = \n";
+    cout << inverse(A);
+
+    cout << "inverse(A.shift_to(1,2)) * A.shift_to(1,2) = \n";
+    cout << inverse(A) * A;
+    {
+        Matrix Ainv( inverse(A) );
+        cout << "Ainv *= A =\n";
+        cout << (Ainv *= A);
     }
+
+    cout << "norm( A , 0.0 ) = " << norm( A, 0.0 ) << "\n" ;
+    cout << "norm( A , 1.0 ) = " << norm( A, 1.0 ) << "\n" ;
+    cout << "norm( A , 2.0 ) = " << norm( A, 2.0 ) << "\n" ;
+    cout << "norm( A , 3.0 ) = " << norm( A, 3.0 ) << "\n" ;
+    cout << "\n";
+    cout << "norm( inverse(A), 0.0 ) = " << norm(inverse(A), 0.0 ) << "\n" ;
+    cout << "norm( inverse(A), 1.0 ) = " << norm(inverse(A), 1.0 ) << "\n" ;
+    cout << "norm( inverse(A), 2.0 ) = " << norm(inverse(A), 2.0 ) << "\n" ;
+    cout << "norm( inverse(A), 3.0 ) = " << norm(inverse(A), 3.0 ) << "\n" ;
+
+
+    cout << "Ashift_to(1,2) + B = \n";
+    cout <<  A + B ;
+
+    cout << "Ashift_to(1,2) - B = \n";
+    cout <<  A - B ;
+
+    cout << "Ashift_to(1,2) & B = \n";
+    cout <<  (A & B);
+
+    cout << "Ashift_to(1,2) % B = \n";
+    cout <<  (A % B);
+
+    cout << "A(1,2,2,2) = \n";
+    cout <<  A(1,2,2,2);
+
+
+    Big = new Matrix( UpperTriangle( 15 ) );
+
 //    cout << "Big = \n";
 //    cout << *Big;
 
-//    cout << "transpose( *Big ) = \n";
-//    cout << transpose( *Big );
+    cout << "transpose( *Big ) = \n";
+    cout << transpose( *Big );
 
 //    cout << "LU_Decomp( *Big ) = \n";
 //    LU = new LU_Decomp( *Big );
@@ -132,6 +205,8 @@ main()
 
     cout << "1.0 / *Big = \n";
     cout << ( 1.0 / (*Big) );
+
+    delete Big;
 };
 
 float square( float a ){

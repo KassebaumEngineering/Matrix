@@ -12,16 +12,23 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.C,v 1.3 1993/11/15 20:29:39 jak Exp $
+/*  $Id: Matrix.C,v 1.4 1993/11/18 07:29:23 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.3  1993/11/15 20:29:39  jak
-/*  Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
-/**/
+/*  Revision 1.4  1993/11/18 07:29:23  jak
+/*  Added alot of increased functionality, including support for
+/*  non-zero aligned matrices.  This supports dealing with
+/*  arbitrary matrix partitions.  Also, LU decompositions are
+/*  stored with the matrices the derived from, and are recovered
+/*  rather than re-computed if a matrix is re-used.   -jak
+/*
+ * Revision 1.3  1993/11/15  20:29:39  jak
+ * Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
+ **/
 // =====================================
 
-static char rcsid_C[] =  "$Id: Matrix.C,v 1.3 1993/11/15 20:29:39 jak Exp $";
+static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.4 1993/11/18 07:29:23 jak Exp $";
 
 
 #ifdef LIBGpp
@@ -33,292 +40,716 @@ static char rcsid_C[] =  "$Id: Matrix.C,v 1.3 1993/11/15 20:29:39 jak Exp $";
 #include "Matrix.H"
 
 void Abort( char *s ){
-    cerr << "Matrix::" << s;
-    exit( -1 );
+    cerr <<  s << "\n";
+    abort();
 };
 
-Matrix::Matrix(unsigned short r, unsigned short c)
+Matrix::Matrix(unsigned int r, unsigned int c, const char*  aname) : 
+first_row(0), number_of_rows(r), first_col(0), number_of_cols(c), m(0)
 {
-    int i;
-    float *newmat;
-
-    myRows = r;
-    myColumns = c;
-
-    newmat = (float *) new float[ r * c ];
-    m = (float **) new float*[ sizeof(float*) * r ];
-
-    if (newmat == (float  *)0 ) cerr << "newmat == 0 !\n";	
-    if (m      == (float **)0 ) cerr << "m == 0 !\n";
-
-    for (i = 0; i < (int)r; i++){
-        m[i] = &(newmat[i*c]);
-    }
-
-    for( i=0; i < (int)r*(int)c; i++){
-        *newmat++ = 0.0;
-    }
+    strncpy(name, aname, MAXNAMELEN-1); 
+    allocate();
 };
 
-Matrix::Matrix(const Matrix &matA)    // Copy Constructor
+Matrix::Matrix(unsigned int fr, unsigned int fc, int r, int c, const char* aname): 
+first_row(fr), number_of_rows(r), first_col(fc), number_of_cols(c), m(0)
 {
-    int i;
-    float *newmat, *ptr;
+    strncpy(name, aname, MAXNAMELEN-1);
+    allocate();
+};
 
-    myRows = matA.rows();
-    myColumns = matA.cols();
+// Copy Constructor
+Matrix::Matrix(const Matrix &matA):  first_row(matA.first_row), number_of_rows(matA.number_of_rows), first_col(matA.first_col), number_of_cols(matA.number_of_cols), m(0)
+{
+    register int r,c;
+    register float *ptrA, *ptrB;
 
-    newmat = (float *) new float[ myRows * myColumns ];
-    m = (float **) new float*[ sizeof(float*) * myRows];
+    strncpy(name, matA.name, MAXNAMELEN-1);
+ 
+    allocate();
 
-    if (newmat == (float  *)0 ) cerr << "newmat == 0 !\n";	
-    if (m      == (float **)0 ) cerr << "m == 0 !\n";
-	
-    for (i = 0; i< (int)myRows; i++){
-        m[i] = &(newmat[ i * myColumns ]);
-    }
-
-    ptr = matA[0];
-    for( i=0; i < (int)myRows*(int)myColumns; i++){
-        *newmat++ = *ptr++;
+    for( r=first_row; r < first_row+number_of_rows; r++){
+        ptrA = &(m[r][first_col]);
+        ptrB = &(matA[r][first_col]);
+        for( c=0; c< number_of_cols; c++){
+            *ptrA++ = *ptrB++;
+        }
     }
 };
 
 Matrix::~Matrix( void )
 {
-    delete  *m;
-    delete  m;
+    deallocate();
 };
+
+void Matrix::deallocate()
+{
+	if ( m != (float **)0 ){
+		delete [] &(m[first_row][first_col]);
+		delete [] &(m[first_row]);
+	}
+};
+
+void Matrix::allocate()
+{
+    register int r, size;
+    register float *newmat, *ptr;
+
+    if( (size = number_of_rows * number_of_cols) > 0 ){
+
+        newmat = (float *) new float [ size ];
+        m = (float **) new float* [ number_of_rows ];
+		if ((newmat == (float  *)0 )||(m == (float **)0 )) {
+			cerr << "Matrix::allocate(): couln't allocate space for a ";
+			cerr << "Matrix( " << first_row << ","  ;
+			cerr << number_of_rows << "," << first_col << "," ;
+			cerr << number_of_cols << " )\n" ;
+			abort();
+		}
+
+		for( ptr = newmat, r=0; r < size; r++){
+			*ptr++ = 0.0;
+		}
+	
+		for (ptr = newmat, r = 0; r < number_of_rows; r++){
+			m[r] = ptr - first_col;
+			ptr += number_of_cols;
+		}
+		m = m - first_row;
+
+    } else {
+
+        newmat = (float *)0;
+        m = (float **)0;
+
+    }
+};
+
 
 Matrix& Matrix::operator=(const Matrix &matB)   // performs a copy
 {
-    register short int r,c;
-    register float *newmat, *ptr;
+    register int r,c;
+    register float *ptrB, *ptrA;
 
-    if ((matB.rows() != myRows) || (matB.cols() != myColumns)){
-        delete *m;
-        delete m;
-        myRows    = matB.rows();
-        myColumns = matB.cols();
-		newmat = (float *) new float[ myRows * myColumns ];
-		m = (float **) new float*[ sizeof(float*) * myRows];
-		for (r = 0; r< (int)myRows; r++){
-			m[r] = &(newmat[ r * myColumns ]);
-		}
-    }
+    if ((matB.number_of_rows != number_of_rows) || (matB.number_of_cols != number_of_cols)){
+ 		deallocate();
+        number_of_rows = matB.number_of_rows;
+        number_of_cols = matB.number_of_cols;
+        first_row = matB.first_row;
+        first_col = matB.first_col;
+        allocate();
+    } else 
+        this->shift_to(matB.first_row, matB.first_col);
 
-    ptr = matB[0];
-    for( r=0; r < (int)myRows*(int)myColumns; r++){
-        *newmat++ = *ptr++;
+    for( r=first_row; r < first_row+number_of_rows; r++){
+        ptrA = &(m[r][first_col]);
+        ptrB = &(matB[r][first_col]);
+        for( c=first_col; c< first_col+number_of_cols; c++){
+            *ptrA++ = *ptrB++;
+        }
     }
 
     return (*this);
 };
 
-Matrix& transpose( const Matrix &matA )
+//  Submatrix Access Methods
+Matrix Matrix:: operator() ( int fr, int fc, int rows, int cols ) const
 {
-    register float *ptr_r;
-    register unsigned short r,c;
-    unsigned short Rows, Cols;
-    Matrix  *result;
+    Matrix result;
 
-    result = new Matrix( Rows = matA.cols(), Cols = matA.rows() );
+    result = Ones(rows,cols);
+    result.shift_to(fr,fc);
 
-    for( r=0; r< Rows; r++ ){
-        ptr_r = (*result)[r];
-        for( c=0; c<Cols; c++ ){
-            *ptr_r++ = matA[c][r];
-        }
-    }
-
-    return (*result);
+    return (result & *this);
 };
 
-Matrix& operator+( const Matrix &matA, const Matrix &matB )
+Matrix& Matrix:: shift_to ( int new_fr, int new_fc )
 {
-    Matrix *result;
-    register short int r,c, Rows, Cols;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    register int r;
 
-    if ((Rows = matA.rows()) != matB.rows()) 
-        Abort("Incompatible Row Dimensions");
-    if ((Cols = matA.cols()) != matB.cols()) 
-        Abort("Incompatible Col Dimensions");
+// adjust collumns
+    for(r = first_row; r< first_row + number_of_rows; r++)
+         m[r] = m[r] + first_col - new_fc;
+    first_col = new_fc;
 
-    result = new Matrix( Rows, Cols );
-    
-    for( r=0; r<Rows; r++ ){  
-        ptr_r = (*result)[r];
-        ptr_a = matA[r];
-        ptr_b = matB[r];
-        for( c=0; c<Cols ; c++)
-            *ptr_r++ = *ptr_a++ + *ptr_b++;
-    }
+// adjust rows
+    m = m + first_row - new_fr;
+    first_row = new_fr;
 
-    return (*result);
+    return *this;
 };
 
-Matrix& operator-( const Matrix &matA, const Matrix &matB )
+// Matrix Operators
+Matrix & Matrix::operator += ( const Matrix& matA )
 {
-    Matrix *result;
-    register short int r,c, Rows, Cols;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int fr,fc,rows,cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a;
 
-    if ((Rows = matA.rows()) != matB.rows()) 
-        Abort("Incompatible Row Dimensions");
-    if ((Cols = matA.cols()) != matB.cols()) 
-        Abort("Incompatible Col Dimensions");
+    fr = first_row <? matA.first_row ;
+    fc = first_col <? matA.first_col ;
+    rows = first_row + number_of_rows >? matA.first_row + matA.number_of_rows;
+    cols = first_col + number_of_cols >? matA.first_col + matA.number_of_cols;
+    rows -= fr;
+    cols -= fc;
 
-    result = new Matrix( Rows, Cols );
-    
-    for( r=0; r<Rows; r++ ){  
-        ptr_r = (*result)[r];
-        ptr_a = matA[r];
-        ptr_b = matB[r];
-        for( c=0; c<Cols ; c++)
-            *ptr_r++ = *ptr_a++ - *ptr_b++;
+    if((rows != number_of_rows)||(cols != number_of_cols)){
+        Matrix Temp( *this );
+ 		deallocate();
+        number_of_rows = rows;
+        number_of_cols = cols;
+        first_row = fr;
+        first_col = fc;
+        allocate();
+		for( r=Temp.first_row; r<Temp.first_row+Temp.number_of_rows; r++ ){  
+			ptr_r = &(m[r][Temp.first_col]);
+			ptr_a = &(Temp[r][Temp.first_col]);
+			for( c=0; c < Temp.number_of_cols; c++)
+				*ptr_r++ = *ptr_a++;
+		}
     }
 
-    return (*result);
+    for( r=matA.first_row; r<matA.first_row+matA.number_of_rows; r++ ){  
+        ptr_r = &(m[r][matA.first_col]);
+        ptr_a = &(matA[r][matA.first_col]);
+        for( c=0; c < matA.number_of_cols; c++)
+            *ptr_r++ += *ptr_a++;
+    }
+
+    return (*this);
 };
 
-Matrix& operator*( const Matrix &matA, const Matrix &matB )
-{    
-    Matrix *result;
-    register unsigned short r,c,q;
-    unsigned short Rows_A, Cols_A, Rows_B, Cols_B;
+Matrix & Matrix::operator += ( float scalar )
+{
+    register int r,c;
+
+    for( r=first_row; r<number_of_rows; r++)
+        for( c=first_col; c<number_of_cols; c++)
+            m[r][c] += scalar;
+
+    return *this;
+};
+
+Matrix & Matrix::operator -= ( const Matrix& matA)
+{
+    int fr,fc,rows,cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a;
+
+    fr = first_row <? matA.first_row ;
+    fc = first_col <? matA.first_col ;
+    rows = first_row + number_of_rows >? matA.first_row + matA.number_of_rows;
+    cols = first_col + number_of_cols >? matA.first_col + matA.number_of_cols;
+    rows -= fr;
+    cols -= fc;
+
+    if((rows != number_of_rows)||(cols != number_of_cols)){
+        Matrix Temp( *this );
+ 		deallocate();
+        number_of_rows = rows;
+        number_of_cols = cols;
+        first_row = fr;
+        first_col = fc;
+        allocate();
+		for( r=Temp.first_row; r<Temp.first_row+Temp.number_of_rows; r++ ){  
+			ptr_r = &(m[r][Temp.first_col]);
+			ptr_a = &(Temp[r][Temp.first_col]);
+			for( c=0; c < Temp.number_of_cols; c++)
+				*ptr_r++ = *ptr_a++;
+		}
+    }
+
+    for( r=matA.first_row; r<matA.first_row+matA.number_of_rows; r++ ){  
+        ptr_r = &(m[r][matA.first_col]);
+        ptr_a = &(matA[r][matA.first_col]);
+        for( c=0; c < matA.number_of_cols; c++)
+            *ptr_r++ -= *ptr_a++;
+    }
+
+    return (*this);
+};
+
+Matrix & Matrix::operator -= ( float scalar)
+{
+    register int r,c;
+
+    for( r=first_row; r<number_of_rows; r++)
+        for( c=first_col; c<number_of_cols; c++)
+            m[r][c] -= scalar;
+
+    return *this;
+};
+
+Matrix & Matrix::operator *= ( const Matrix& matA)
+{
+    register int r,c,q;
     register float *ptr_r, *ptr_a, *ptr_b;
-
-    Cols_A = matA.cols();  Cols_B = matB.cols();
-    Rows_A = matA.rows();  Rows_B = matB.rows();
-
-    result = new Matrix( Rows_A, Cols_B );
 
 // MxQ times QxN
-    if ( Cols_A == Rows_B ){
-        Matrix B_bycols( transpose( matB ) );
-
-        for (r=0; r< Rows_A; r++){
-            ptr_r = (*result)[r];
-            for (c=0; c<Cols_B; c++, ptr_r++){
-                ptr_a = matA[r];
-                ptr_b = (B_bycols)[c];
+    if ( number_of_cols == matA.number_of_rows ){
+        Matrix Temp( *this );
+        Matrix A_bycols;
+        A_bycols = transpose( matA );
+ 		deallocate();
+        number_of_cols = matA.number_of_cols;
+        first_col = matA.first_col;
+        allocate();
+		for( r=Temp.first_row; r<Temp.first_row+Temp.number_of_rows; r++ ){  
+//			ptr_r = &(m[r][Temp.first_col]);
+			ptr_r = &(m[r][first_col]);
+            for (c=first_col; c<first_col+ number_of_cols; c++, ptr_r++){
+                ptr_a = &(Temp[r][Temp.first_col]);
+                ptr_b = &(A_bycols[c][matA.first_row]);
                 *ptr_r = 0.0;
-                for (q=0; q<Cols_A; q++)
+                for (q=0; q<Temp.number_of_cols; q++)
                     *ptr_r += *ptr_a++ * *ptr_b++; 
             }
-        }
-        return (*result);
+		}
      }
 
 // 1x1 times NxM
-    else if ((Cols_A == 1) && (Rows_A == 1)){
-        return matA[0][0] * matB;
-    } else if ((Rows_B == 1) && (Cols_B == 1)){
-        return matA * matB[0][0];
+    else if ((number_of_rows == 1) && (number_of_cols == 1)){
+        *this = m[first_row][first_col] * matA;
+
+    } else if ((matA.number_of_rows == 1) && (matA.number_of_cols == 1)){
+         *this  *= matA[matA.first_row][matA.first_col];
+
     }
 
 // Error 
     else {
-        Abort("Incompatible Matrix Dimensions");
+        Abort("operator*=(const Matrix& ):Incompatible Matrix Dimensions");
     }
 
-    return (*result * 0.0);
+    return *this;
 };
 
-Matrix& operator*( float scalar, const Matrix &matA )
+Matrix & Matrix::operator *= ( float scalar )
 {
-    Matrix *result;
-    register short int r,c, Rows, Cols;
+    register int r,c;
 
-    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
+    for( r=first_row; r<number_of_rows; r++)
+        for( c=first_col; c<number_of_cols; c++)
+            m[r][c] *= scalar;
 
-    for( r=0; r<Rows; r++)
-        for( c=0; c<Cols; c++)
-            (*result)[r][c] = matA[r][c] * scalar;
-
-    return (*result);
+    return *this;
 };
 
-Matrix& operator+( const Matrix &matA, float scalar){
-    Matrix *result;
-    register short int r,c, Rows, Cols;
-
-    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
-
-    for( r=0; r<Rows; r++)
-        for( c=0; c<Cols; c++)
-            (*result)[r][c] = matA[r][c] + scalar;
-
-    return (*result);
+Matrix & Matrix::operator /= ( const Matrix& matA)
+{
+    *this = *this / matA ;
 };
 
-Matrix& map( float (*f)(float), const Matrix &matA){
-    Matrix *result;
-    register short int r,c, Rows, Cols;
+Matrix & Matrix::operator &= ( const Matrix& matA)
+{
+    int fr, fc, rows, cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a, *ptr_b;
 
-    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
+    fr = first_row >? matA.firstrow();
+    fc = first_col >? matA.firstcol();
+    rows = first_row + number_of_rows <? matA.firstrow()+matA.rows();
+    cols = first_col + number_of_cols <? matA.firstcol()+matA.cols();
+    rows = rows - fr;
+    cols = cols - fc;
 
-    for( r=0; r<Rows; r++)
-        for( c=0; c<Cols; c++)
-            (*result)[r][c] = (*f)( matA[r][c] );
-
-    return (*result);
+    if((rows > 0) && (cols > 0)){
+        Matrix Temp( *this );
+ 		deallocate();
+        first_row = fr;
+        first_col = fc;
+        number_of_rows = rows;
+        number_of_cols = cols;
+        allocate();
+		for( r=fr; r < fr + rows; r++){
+			ptr_r = &(m[r][fc]);
+			ptr_a = &(Temp[r][fc]);
+			ptr_b = &(matA[r][fc]);
+			for( c=0; c < cols; c++)
+				*ptr_r++ = *ptr_a++ * *ptr_b++ ;
+		}
+    } else {
+		ptr_r = &(m[first_row][first_col]);
+        for( r=0; r<number_of_rows; r++)
+            for( c=0; c<number_of_cols; c++)
+                *ptr_r++ = 0.0;
+    }
+    return *this;
 };
 
-Matrix& map( float (*f)(float,float), const Matrix &matA, const Matrix &matB){
+Matrix & Matrix::operator %= ( const Matrix & matA)
+{
+    int fr, fc, rows, cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a, *ptr_b;
 
-    Matrix *result;
-    register short int r,c, Rows, Cols;
+    fr = first_row >? matA.firstrow();
+    fc = first_col >? matA.firstcol();
+    rows = first_row + number_of_rows <? matA.firstrow()+matA.rows();
+    cols = first_col + number_of_cols <? matA.firstcol()+matA.cols();
+    rows = rows - fr;
+    cols = cols - fc;
 
-    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
-
-    for( r=0; r<Rows; r++)
-        for( c=0; c<Cols; c++)
-            (*result)[r][c] = (*f)( matA[r][c] , matB[r][c]);
-
-    return (*result);
+    if((rows > 0) && (cols > 0)){
+        Matrix Temp( *this );
+ 		deallocate();
+        first_row = fr;
+        first_col = fc;
+        number_of_rows = rows;
+        number_of_cols = cols;
+        allocate();
+		for( r=fr; r < fr + rows; r++){
+			ptr_r = &(m[r][fc]);
+			ptr_a = &(Temp[r][fc]);
+			ptr_b = &(matA[r][fc]);
+			for( c=0; c < cols; c++)
+				*ptr_r++ = *ptr_a++ / *ptr_b++ ;
+		}
+    } else {
+		ptr_r = &(m[first_row][first_col]);
+        for( r=0; r<number_of_rows; r++)
+            for( c=0; c<number_of_cols; c++)
+                *ptr_r++ = 0.0;
+    }
+    return *this;
 };
 
-Matrix& operator^( const Matrix &matA, const Matrix &matB){
-    Matrix *result;
-    register short int r,c, Rows, Cols;
-
-    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
-
-    for( r=0; r<Rows; r++)
-        for( c=0; c<Cols; c++)
-            (*result)[r][c] = matA[r][c] * matB[r][c];
-
-    return (*result);
+Matrix & Matrix::apply ( float(*f)( float ) )
+{
+     *this = map( f, *this );
+     return *this;
 };
 
-Matrix& operator%( const Matrix &matA, const Matrix &matB){
-    Matrix *result;
-    register short int r,c, Rows, Cols;
+Matrix & Matrix::apply ( float(*f)( float, float ), const Matrix& matA)
+{
+     *this = map( f, *this , matA);
+     return *this;
+};
 
-    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
+// Matrix Norms
+// default Euclidean norm p = 2
+// p = 1 -> 1-norm, p=0 -> infinity norm
+float norm ( const Matrix& matA, float p )
+{
+    register int r,c;
+    register double temp, max_val;
 
-    for( r=0; r<Rows; r++)
-        for( c=0; c<Cols; c++)
-            (*result)[r][c] = matA[r][c] / matB[r][c];
+    if ( p == 0.0 ){        // infinity norm (max row-sum norm)
+        for( max_val=0.0, r=matA.first_row;
+            r< matA.first_row+matA.number_of_rows; r++){
+			for(temp=0.0,c=matA.first_col;
+                c<matA.first_col+matA.number_of_cols; c++){
+                temp += fabs( matA[r][c] );
+            }
+            max_val = max_val >? temp;
+        }
+    } else if ( p == 1.0 ){ // 1 - norm      (max col-sum norm)
+		for(max_val=0.0,c=matA.first_col;
+			c<matA.first_col+matA.number_of_cols; c++){
+			for(temp=0.0, r=matA.first_row;
+				r< matA.first_row+matA.number_of_rows; r++){
+                temp += fabs( matA[r][c] );
+            }
+            max_val = max_val >? temp;
+        }
+    } else {              // p - norm => p=2 euclidean norm
+		for(max_val=0.0,c=matA.first_col;
+			c<matA.first_col+matA.number_of_cols; c++){
+			for(temp=0.0, r=matA.first_row;
+				r< matA.first_row+matA.number_of_rows; r++){
+                temp += fabs( pow((double)matA[r][c],(double)p ));
+            }
+            temp = pow( temp , (1.0 / p) );
+            max_val = max_val >? temp;
+        }
+    }
 
-    return (*result);
+    return (float)max_val;
+};
+
+// Comparison Operations
+int operator == ( const Matrix& matA, const Matrix&matB )
+{
+    register int r,c;
+    register float result;
+
+    if ( matA.number_of_rows != matB.number_of_rows ) return 0;
+    if ( matA.first_row != matB.first_row )  return 0;
+    if ( matA.number_of_cols != matB.number_of_cols )  return 0;
+    if ( matA.first_col != matB.first_col )  return 0;
+
+    result = 0.0;
+    for( r=matA.first_row; r<matA.first_row + matA.number_of_rows; r++)
+        for( c=matA.first_col; c<matA.first_col + matA.number_of_cols; c++)
+            result += fabs( matA[r][c] - matB[r][c] );
+
+    return (result == 0.0);
+};
+
+Matrix transpose( const Matrix &matA )
+{
+    register float *ptr_dest;
+    register int r,c;
+    Matrix   result;
+
+    result = Matrix( matA.first_col, matA.first_row, matA.number_of_cols, matA.number_of_rows );
+
+    for( r=result.first_row; r < result.first_row + result.number_of_rows; r++ ){
+        ptr_dest = &(result[r][result.first_col]);
+        for( c=result.first_col; c < result.first_col + result.number_of_cols; c++ ){
+            *ptr_dest++ = matA[c][r];
+        }
+    }
+
+    return result;
+};
+
+Matrix operator+( const Matrix &matA, const Matrix &matB )
+{
+    Matrix   result;
+    int fr, fc, rows, cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a, *ptr_b;
+
+    fr = matB.first_row <? matA.first_row ;
+    fc = matB.first_col <? matA.first_col ;
+    rows = matB.first_row + matB.number_of_rows >? matA.first_row + matA.number_of_rows;
+    cols = matB.first_col + matB.number_of_cols >? matA.first_col + matA.number_of_cols;
+    rows -= fr;
+    cols -= fc;
+
+    result = Matrix( fr, fc, rows,  cols );
+    
+    for( r=matA.first_row; r<matA.first_row+matA.number_of_rows; r++ ){  
+        ptr_r = &(result[r][matA.first_col]);
+        ptr_a = &(matA[r][matA.first_col]);
+        for( c=0; c < matA.number_of_cols; c++)
+            *ptr_r++ = *ptr_a++;
+    }
+    for( r=matB.first_row; r<matB.first_row+matB.number_of_rows; r++ ){  
+        ptr_r = &(result[r][matB.first_col]);
+        ptr_b = &(matB[r][matB.first_col]);
+        for( c=0; c < matB.number_of_cols; c++)
+            *ptr_r++ += *ptr_b++;
+    }
+
+    return result;
+};
+
+Matrix operator-( const Matrix &matA, const Matrix &matB )
+{
+    Matrix   result;
+    int fr, fc, rows, cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a, *ptr_b;
+
+    fr = matB.first_row <? matA.first_row ;
+    fc = matB.first_col <? matA.first_col ;
+    rows = matB.first_row + matB.number_of_rows >? matA.first_row + matA.number_of_rows;
+    cols = matB.first_col + matB.number_of_cols >? matA.first_col + matA.number_of_cols;
+    rows -= fr;
+    cols -= fc;
+
+    result = Matrix( fr, fc, rows, cols );
+    
+    for( r=matA.first_row; r<matA.first_row+matA.number_of_rows; r++ ){  
+        ptr_r = &(result[r][matA.first_col]);
+        ptr_a = &(matA[r][matA.first_col]);
+        for( c=0; c < matA.number_of_cols; c++)
+            *ptr_r++ = *ptr_a++;
+    }
+    for( r=matB.first_row; r<matB.first_row+matB.number_of_rows; r++ ){  
+        ptr_r = &(result[r][matB.first_col]);
+        ptr_b = &(matB[r][matB.first_col]);
+        for( c=0; c < matB.number_of_cols; c++)
+            *ptr_r++ -= *ptr_b++;
+    }
+
+    return result;
+};
+
+// row_to_col = first_row - first_col;
+// col_to_row = first_col - first_row;
+
+Matrix operator*( const Matrix &matA, const Matrix &matB )
+{    
+    Matrix   result;
+    int fr, fc, rows, cols;
+    register int r,c,q;
+    register float *ptr_r, *ptr_a, *ptr_b;
+
+// MxQ times QxN
+    if ( matA.number_of_cols == matB.number_of_rows ){
+        Matrix B_bycols;
+        B_bycols = transpose( matB );
+        fr = matA.first_row;
+        rows = matA.number_of_rows;
+        fc = matB.first_col;
+        cols = matB.number_of_cols;
+        result = Matrix(fr, fc, rows,  cols );
+
+        for (r=fr; r< fr + rows; r++){
+            ptr_r = &(result[r][fc]);
+            for (c=fc; c<fc + cols; c++, ptr_r++){
+                ptr_a = &(matA[r][matA.first_col]);
+                ptr_b = &(B_bycols[c][matB.first_row]);
+                *ptr_r = 0.0;
+                for (q=0; q<matA.number_of_cols; q++,ptr_a++,ptr_b++)
+                    *ptr_r += (*ptr_a * *ptr_b); 
+            }
+        }
+        return result;
+     }
+
+// 1x1 times NxM
+    else if ((matA.number_of_rows == 1) && (matA.number_of_cols == 1)){
+        return matA[matA.first_row][matA.first_col] * matB;
+
+    } else if ((matB.number_of_rows == 1) && (matB.number_of_cols == 1)){
+        return matA * matB[matB.first_row][matB.first_col];
+
+    }
+
+// Error 
+    else {
+        Abort("operator*(const Matrix&, const Matrix& ):Incompatible Matrix Dimensions");
+    }
+
+    return result;
+};
+
+Matrix operator*( float scalar, const Matrix &matA )
+{
+    Matrix result( matA );
+    register int r,c;
+
+    for( r=matA.first_row; r<matA.number_of_rows; r++)
+        for( c=matA.first_col; c<matA.number_of_cols; c++)
+            result[r][c] = matA[r][c] * scalar;
+
+    return result;
+};
+
+Matrix operator+( const Matrix &matA, float scalar){
+    Matrix result( matA );
+    register int r,c;
+
+    for( r=matA.first_row; r<matA.number_of_rows; r++)
+        for( c=matA.first_col; c<matA.number_of_cols; c++)
+            result[r][c] = matA[r][c] + scalar;
+
+    return result;
+};
+
+Matrix map( float (*f)(float), const Matrix &matA){
+    Matrix result( matA );
+    register int r,c;
+
+    for( r=matA.first_row; r<matA.number_of_rows; r++)
+        for( c=matA.first_col; c<matA.number_of_cols; c++)
+            result[r][c] = (*f)(matA[r][c]);
+
+    return result;
+};
+
+Matrix map( float (*f)(float,float), const Matrix &matA, const Matrix &matB){
+    Matrix result;
+    register int r,c;
+
+    if ( matA.number_of_rows != matB.number_of_rows ) 
+        Abort("map(float(*)(float,float),const Matrix&,const Matrix&):Incompatible Row Dimensions. \n");
+    if ( matA.first_row != matB.first_row ) 
+        Abort("map(float(*)(float,float),const Matrix&,const Matrix&):Incompatible Row Indices. \n");
+    if ( matA.number_of_cols != matB.number_of_cols ) 
+        Abort("map(float(*)(float,float),const Matrix&,const Matrix&):Incompatible Column Dimensions.\n");
+    if ( matA.first_col != matB.first_col ) 
+        Abort("map(float(*)(float,float),const Matrix&,const Matrix&):Incompatible Column Indices. \n");
+
+    result = Matrix( matA );
+    for( r=matA.first_row; r<matA.first_row + matA.number_of_rows; r++)
+        for( c=matA.first_col; c<matA.first_col + matA.number_of_cols; c++)
+            result[r][c] = (*f)( matA[r][c], matB[r][c] );
+
+    return result;
+};
+
+Matrix operator & ( const Matrix &matA, const Matrix &matB){
+    Matrix result;
+    int fr, fc, rows, cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a, *ptr_b;
+
+    fr = matA.firstrow() >? matB.firstrow();
+    fc = matA.firstcol() >? matB.firstcol();
+    rows = matA.firstrow()+matA.rows() <? matB.firstrow()+matB.rows();
+    cols = matA.firstcol()+matA.cols() <? matB.firstcol()+matB.cols();
+    rows = rows - fr;
+    cols = cols - fc;
+
+    if((rows > 0) && (cols > 0)){
+		result = Matrix( fr, fc, rows,  cols );
+		for( r=fr; r < fr + rows; r++){
+			ptr_r = &(result[r][fc]);
+			ptr_a = &(matA[r][fc]);
+			ptr_b = &(matB[r][fc]);
+			for( c=0; c < cols; c++)
+				*ptr_r++ = *ptr_a++ * *ptr_b++ ;
+		}
+    } else {
+		result = Matrix(matA.rows(),matA.cols(),"Empty");
+    }
+    return result;
+};
+
+Matrix operator % ( const Matrix &matA, const Matrix &matB){
+    Matrix result;
+    int fr, fc, rows, cols;
+    register int r,c;
+    register float *ptr_r, *ptr_a, *ptr_b;
+
+    fr = matA.firstrow() >? matB.firstrow();
+    fc = matA.firstcol() >? matB.firstcol();
+    rows = matA.firstrow()+matA.rows() <? matB.firstrow()+matB.rows();
+    cols = matA.firstcol()+matA.cols() <? matB.firstcol()+matB.cols();
+    rows = rows - fr;
+    cols = cols - fc;
+
+    if((rows > 0) && (cols > 0)){
+		result = Matrix( fr, fc, rows, cols );
+		for( r=fr; r < fr + rows; r++){
+			ptr_r = &(result[r][fc]);
+			ptr_a = &(matA[r][fc]);
+			ptr_b = &(matB[r][fc]);
+			for( c=0; c < cols; c++)
+				*ptr_r++ = *ptr_a++ / *ptr_b++ ;
+		}
+    } else {
+		result = Matrix(matA.rows(),matA.cols(),"Empty");
+    }
+    return result;
 };
 
 ostream & operator << (ostream &cbuf, const Matrix &matA)
 {
     register float *ptr;
-    register unsigned short r,c;
+    register unsigned r,c;
 
-    for (r=0; r<matA.rows(); r++){
-        ptr = matA[r];
-        for (c=0; c< matA.cols(); c++){
-            cbuf << *ptr++ << "\t";
-        }
-        cbuf << "\n";
+    if ( strlen( matA.name ) > 0)
+        cbuf << matA.name << " ";
+    cbuf << "at ( " << matA.first_row ;
+    cbuf << " , " << matA.first_col << " )\n";
+    if( matA.is_empty() )
+        cbuf << "Null Matrix\n";
+    else {
+		for (r=matA.first_row; r < matA.first_row + matA.number_of_rows; r++){
+			ptr = &(matA[r][matA.first_col]);
+			for ( c=0; c < matA.number_of_cols; c++){
+				cbuf << *ptr++ << "\t";
+			}
+			cbuf << "\n";
+		}
+		cbuf << "\n";
     }
-    cbuf << "\n";
     return cbuf;
 };
 
@@ -327,16 +758,16 @@ istream & operator >> (istream &cbuf, const Matrix &matA)
     register float *ptr;
     register unsigned short r,c;
 
-    for (r=0; r<matA.rows(); r++){
-        ptr = matA[r];
-        for (c=0; c<matA.cols(); c++){
+    for (r=matA.first_row; r < matA.first_row + matA.number_of_rows; r++){
+        ptr = &(matA[r][matA.first_col]);
+        for (c=0; c < matA.number_of_cols; c++){
             cbuf >> *ptr++;
         }
     }
     return cbuf;
 };
 
-Matrix& operator / (const Matrix &matA, const Matrix &matB)
+Matrix operator / (const Matrix &matA, const Matrix &matB)
 {
   // solve X = matA / matB
   // means :
@@ -350,84 +781,158 @@ Matrix& operator / (const Matrix &matA, const Matrix &matB)
   // this is not guaranteed to succeed - but I think it will
   //
     if ( matA.rows() < matA.cols() ){
-        LU_Decomp LU( transpose(matB) );
+        LU_Decomposition LU( transpose(matB) );
         return  transpose( LU.solve_for( transpose( matA ) ) );
     } else {
-        LU_Decomp LU( matB );
+        LU_Decomposition LU( matB );
         return  LU.solve_for( matA );
     }
 };
 
-Matrix& inverse( const Matrix &matA )
+Matrix inverse( const Matrix &matA )
 {
-    register unsigned short r;
-    unsigned short size;
+    Matrix b, soln;
+    LU_Decomposition lu;
+    unsigned int size;
 
     if ((size = matA.rows()) != matA.cols())
-        Abort("Singular - Inverse requires square matrix!");
+        Abort("inverse( const Matrix& ):Singular! - Matrix Argument is not square!");
     // else
-    {    
-        LU_Decomp LU( matA );
-        Matrix identity( size, size );
-        for( r=0; r< size; r++){
-            identity[r][r] = 1.0;
-        }
-        return LU.solve_for( identity );
-    }    
+	b = Identity(size);
+  	b.shift_to( matA.firstcol(), matA.firstrow() );
+    lu = LU_Decomposition( matA );
+    soln = ( lu.solve_for( b ) );
+	return soln;
 };
 
-LU_Decomp::LU_Decomp( const Matrix &matA )
+// Decompositions
+void    Matrix:: setDecompose ( Composition *comA, int  key )
+{
+    decomp_list.add( comA, key );
+};
+
+Composition* Matrix:: getDecompose ( int key ) const
+{
+    return decomp_list.find( key );
+};
+
+void    Matrix:: delDecompose ( int  key )
+{
+    decomp_list.del( key );
+};
+
+// ==============================================
+// Special Matrices
+//
+
+Matrix Ones( int rows, int cols ){
+	register int i,j;
+	Matrix id(0,0,rows,cols,"Ones");
+	for(i=0;i<rows;i++)
+		for(j=0;j<cols;j++)
+			id[i][j] = 1.0;
+	return id;
+};
+Matrix Identity( int size ){
+	register int i;
+	Matrix id(0,0,size,size,"Identity");
+	for(i=0;i<size;i++)
+		id[i][i] = 1.0;
+	return id;
+};
+Matrix UpperTriangle( int  size ){
+	register int i,j;
+	Matrix id(0,0,size,size,"UpperTriangular");
+	for(i=0;i<size;i++)
+		for(j=i;j<size;j++)
+			id[i][j] = 1.0;
+	return id;
+};
+Matrix LowerTriangle( int  size ){
+	register int i,j;
+	Matrix id(0,0,size,size,"LowerTriangular");
+	for(i=0;i<size;i++)
+		for(j=0;j<=i;j++)
+			id[i][j] = 1.0;
+	return id;
+};
+
+// ==============================================
+// Decomposition Implementations
+//
+
+// copy constructor
+LU_Decomposition::LU_Decomposition( const LU_Decomposition &lu )
+{
+    if ( ! lu.is_empty() ){
+		lumat = lu.lumat;
+		row_permute = lu.row_permute;
+    }
+};
+
+// Assignment Operations
+LU_Decomposition&  LU_Decomposition::operator = (const LU_Decomposition &lu)
+{
+    if ( ! lu.is_empty() ){
+		lumat = lu.lumat;
+		row_permute = lu.row_permute;
+    }
+};
+
+//
+// LU Decomposition of a Matrix
+// 
+LU_Decomposition::LU_Decomposition( Matrix &matA )
 {
 // This algorithm is a distinct implementation of an algorithm found
 // in Numerical Recipes in C.  The ideas expressed as code here, were 
 // derived from that work, which this programmer highly recommends.
 // This routine is based on Crout's method with implicit partial pivoting 
-// as described by Numerical Recipes in C for the ludcmp() routine.
+// as described by Numerical Recipes in C.
 
-    register unsigned short row, col, k;
+    int first_row, first_col, col_to_row, size;
+    register int row, col, k;
     float *row_scaling;
-    float *m,*ptr;
+    float permute_parity;  // even # of row permutations = +1.0, odd = -1.0
+    LU_Decomposition *temp;
 
-// LU routine
+    if ( matA.is_empty() ){
+        return;
+    }
+
+// Get MatA's stored LU Decomposition if available
+    temp = (LU_Decomposition *)( matA.getDecompose( LU_DECOMP ) );
+    if ( temp != (LU_Decomposition *)0 ) {
+        *this = *temp;
+        return;
+    }
+
+//
+// LU routine initialization
 //
     if ( matA.rows() != matA.cols() ) 
-        Abort("LU_Decomp::LU_Decomp - Square Matrix Required!");
+        Abort("LU_Decompose( const Matrix& ): Square Matrix Required!");
+    size =  matA.rows(); // == matA.cols()
+    first_row = matA.firstrow();
+    first_col = matA.firstcol();
 
-// Constructor
+    lumat = matA;  
+    row_permute = IntArray( first_row,  matA.rows());
+
+    row_scaling = new float[ size ];
+    if (row_scaling  == (float *)0 ){
+        Abort("LU_Decompose( const Matrix& ): Could not allocate memory for row_scaling[]!\n");
+    }
+    row_scaling = row_scaling - first_row;
+
 //
-    size = matA.rows();
-    m = (float *) new (float[ size * size ]);
-    lumat = (float **) new float*[ sizeof(float*) * size];
-    
-    for ( row=0; row<size; row++){
-        lumat[row] = &( m[ row*size ] );
-    }
-
-    row_permute = new unsigned short[ size ];
-    if (row_permute  == (unsigned short *)0 ) cerr << "row_permute == 0 !\n";
-	
-    for ( row=0; row< size; row++){
-        row_permute[ row ] = row;
-    }
-
-    permute_parity = 1.0;
-
-    ptr = matA[0];
-    for( k=0; (int)k<(int)size*(int)size; k++){
-        *m++ = *ptr++;
-    }
-//
-// End Construction
-
-   row_scaling = new float[ size ];
-
 // Find the Maximum element value in each row and record a scaling factor
 //
-    for( row=0; row<size; row++){
+    for( row=first_row; row < first_row + size; row++){
         float max, tempval;
 
         max = 0.0;
-        for( col=0; col<size; col++ ){
+        for( col=first_col; col < first_col + size; col++ ){
             tempval = fabs( lumat[row][col] );
             if(tempval > max) max = tempval;
         }
@@ -435,24 +940,26 @@ LU_Decomp::LU_Decomp( const Matrix &matA )
         row_scaling[ row ] = 1.0 / max;
     }
 
+//
 // Crout's Method of Gaussian Elimination
 //
-    for( col=0; col<size; col++){
+    col_to_row = first_row - first_col;
+    for( col=first_col; col < first_col + size; col++){
         float sum, max, tempval;
         unsigned int max_index;
 
-        for( row=0; row<col; row++) {
+        for( row=first_row; row < col+col_to_row; row++) {
             sum = lumat[row][col];
-            for( k=0; k<row; k++)
-                sum -= lumat[row][k] * lumat[k][col];
+            for( k=0; k<row-first_row ; k++)
+                sum -= lumat[row][k+first_col] * lumat[k+first_row][col];
             lumat[row][col] = sum;
         }
         max = 0.0;
         max_index = col;
-        for( row=col; row<size; row++){
+        for( row = col+col_to_row; row < first_row + size; row++){
             sum = lumat[row][col];
-            for( k=0; k<col; k++)
-                sum -= lumat[row][k] * lumat[k][col];
+            for( k=0; k<col-first_col; k++)
+                sum -= lumat[row][k+first_col] * lumat[k+first_row][col];
             lumat[row][col] = sum;
             if((tempval = row_scaling[row] * fabs( sum )) >= max ){
                 max_index = row;
@@ -461,127 +968,271 @@ LU_Decomp::LU_Decomp( const Matrix &matA )
         }
         if ( col != max_index ){
             for( k=0; k<size; k++ ){
-                tempval = lumat[max_index][k];
-                lumat[max_index][k] = lumat[col][k];
-                lumat[col][k] = tempval;
+                tempval = lumat[max_index][k+first_col];
+                lumat[max_index][k+first_col] 
+                    = lumat[ col+col_to_row ][k+first_col];
+                lumat[ col+col_to_row ][k+first_col] = tempval;
             }
             permute_parity = -permute_parity;
-            row_scaling[ max_index ] = row_scaling[ col ];
+            row_scaling[ max_index ] = row_scaling[ col+col_to_row ];
         }
-        row_permute[ col ] = max_index ;
-        if ( lumat[col][col] == 0.0 ) lumat[col][col] = TINY;
+        row_permute[ col+col_to_row ] = max_index ;
+        if ( lumat[ col+col_to_row ][col] == 0.0 )
+            lumat[ col+col_to_row ][col] = TINY;
         if ( col != size-1 ){
-            tempval = 1.0 / (lumat[col][col]);
-            for( row=col+1; row<size; row++) lumat[row][col] *= tempval;
+            tempval = 1.0 / (lumat[ col+col_to_row ][col]);
+            for( row=col+col_to_row+1; row < first_row + size; row++) 
+                lumat[row][col] *= tempval;
         }
     }
 
+//
 // End LU routine
 // 
-
     delete row_scaling;
+    matA.setDecompose( new LU_Decomposition(*this), LU_DECOMP );
 
 };
 
-LU_Decomp::~LU_Decomp()
+LU_Decomposition::~LU_Decomposition()
 {
-    delete  *lumat;
-    delete  lumat;
-    delete  row_permute;
 };
 
-Matrix& LU_Decomp::L() const
-{    
-    Matrix *result;
-    register short int row, col;
 
-    result = new Matrix( size, size );
+Matrix LU_Decomposition::solve_for( const Matrix &matA )
+{
+    Matrix result;
+    register int row, col;
+    int first_row, first_col;
+    int Rows, Cols;
 
-    for( row=0; (int)row<(int)size; row++ )
-        for( col=0; (int)col<(int)size; col++ )
-            if( row > col )
-                (*result)[row][col] = lumat[row][col];
-            else if ( row == col )
-                (*result)[row][col] = 1.0;
-            else // ( row < col )
-                (*result)[row][col] = 0.0;
-//
-// Return the L matrix in its permuted row order.
-//
-    for( row=0; (int)row<(int)size; row++){
-        float tempval;
-        if (row != row_permute[ row ])
-            for( col=0; (int)col<(int)size; col++){
-                tempval = (*result)[row][col];
-                (*result)[row][col] = (*result)[row_permute[ row ]][col];
-                (*result)[row_permute[ row ]][col] = tempval;
-            }
+    if( matA.rows() != lumat.rows() ){
+        Abort("LU_Decomposition::solve_for(const Matrix&): Incompatible Row Dimensions!\n");
+    }
+    if((matA.firstrow() != lumat.firstrow())
+           ||(matA.firstcol() != lumat.firstcol())){
+        this->shift_to( matA.firstrow(), matA.firstcol());
     }
 
-    return (*result);
-};
-
-Matrix& LU_Decomp::U() const
-{
-    Matrix *result;
-    register short int row, col;
-
-    result = new Matrix( size, size );
-
-    for( row=0; (int)row<(int)size; row++ )
-        for( col=0; (int)col<(int)size; col++ )
-            if( row <= col )
-                (*result)[row][col] = lumat[row][col];
-            else  // ( row > col )
-                (*result)[row][col] = 0.0;
-//   
-// Only the L matrix is returned in its permuted row order.
-//
-    return (*result);
-};
-
-Matrix& LU_Decomp::solve_for( const Matrix &matA )
-{
-    Matrix *result;
-    register short row, col;
-    unsigned short Rows, Cols;
-
+    first_row = matA.firstrow();
     Rows = matA.rows();
+    first_col = matA.firstcol();
     Cols = matA.cols();
-    result = new Matrix( matA );
 
-    for( col=0; (int)col<(int)Cols; col++ ){
-        int index;
+    result = matA;
+    for( col=first_col; col < first_col + Cols; col++ ){
+        int flag, index;
         register unsigned short k;
         unsigned short row_p;
         float sum;
 //
 // forward substitution
 //
-        index = -1;
-        for( row=0; (int)row<(int)Rows; row++ ){
+        flag = 0; index = -100000;
+        for( row=first_row; row < first_row + Rows; row++ ){
             row_p = row_permute[row];
 // --
-            sum = (*result)[ row_p ][ col ];
-            (*result)[ row_p ][ col ] = (*result)[ row ][ col ];
-            if (index >= 0)
-                for( k=index; (int)k<(int)row;  k++) 
-                    sum -= lumat[row][k] * (*result)[k][col];
-            else if (sum != 0.0)
-                index = row;
-            (*result)[row][col] = sum;
+            sum = result[ row_p ][ col ];
+            result[ row_p ][ col ] = result[ row ][ col ];
+            if (flag)
+                for( k=index; k < row;  k++) 
+                    sum -= lumat[row][k+first_col-first_row] * result[k][col];
+            else if (sum != 0.0){
+                flag = 1; index = row;
+            }
+            result[row][col] = sum;
         }
 //
 // backsubstitution
 //
-        for( row=Rows-1; (int)row>=0; row--){
-            sum = (*result)[row][col];
-            for( k=row+1; k<Rows; k++){
-                sum -= lumat[row][k] * (*result)[k][col];
+        for( row=first_row + Rows - 1; row >= first_row; row--){
+            sum = result[row][col];
+            for( k=row+1; k < first_row + Rows; k++){
+                sum -= lumat[row][k+first_col-first_row] * result[k][col];
             }
-            (*result)[row][col] = sum / lumat[row][row];
+            result[row][col] = sum / lumat[row][row+first_col-first_row];
         }
     }
 
-    return (*result);
+    result.setName("Solution");
+    return result;
+};
+
+Matrix LU_Decomposition:: operator[] ( int  key ) const
+{
+    register int i,j;
+    Matrix rtn( lumat );
+    Matrix temp;
+    float value;
+
+    if ( key == L_OF_LU ){
+        temp = LowerTriangle( rtn.rows() );
+        temp.shift_to(rtn.firstrow(), rtn.firstcol());
+        rtn = rtn & temp;
+        for(i=rtn.firstrow(); i<rtn.firstrow()+rtn.rows(); i++)
+            rtn[i][i] = 1.0;
+    } else if (key == U_OF_LU) {
+        temp = UpperTriangle( rtn.rows() );
+        temp.shift_to(rtn.firstrow(), rtn.firstcol());
+        rtn = rtn & temp;
+    } else if (key == P_OF_LU) {
+        temp = Identity( rtn.rows() );
+        temp.shift_to(rtn.firstrow(), rtn.firstcol());
+        for(i=rtn.firstrow()+rtn.rows()-1; i>=rtn.firstrow(); i--){
+            for(j=rtn.firstcol(); j< rtn.firstcol()+rtn.cols(); j++){
+                value = temp[i][j]; 
+                temp[i][j] = temp[ row_permute[i] ][j]; 
+                temp[ row_permute[i] ][j] = value;
+            }
+        }
+        rtn = temp;
+    } else {
+        rtn = Matrix();
+    }
+
+    return rtn;
+};
+
+//
+//  IntArray definitiions
+//
+
+void IntArray:: allocate()
+{
+    register int r;
+    register int *ptr;
+
+    if( length > 0 ){
+        array = (int *) new int [ length ];
+		if (array == (int *)0 ) {
+			cerr << "IntArray::allocate(): couln't allocate space for an ";
+			cerr << "IntArray( " << length  << " )\n" ;
+			abort();
+		}
+		for( ptr = array, r=0; r < length; r++){
+			*ptr++ = 0;
+		}	
+		array = array - first_index;
+    } else {
+        array = (int *)0;
+    }
+};
+void IntArray:: deallocate()
+{
+	if ( array != (int *)0 ){
+		delete [] &(array[first_index]);
+	}
+};
+
+
+// Constructors and Destructors
+IntArray:: IntArray( unsigned int len = 0 ): 
+length(len), first_index(0)
+{
+    allocate();
+};
+IntArray:: IntArray( int fi, unsigned int len): 
+length(len), first_index(fi)
+{
+    allocate();
+};
+IntArray:: IntArray( const IntArray &ar ): 
+length(ar.length), first_index(ar.first_index)
+{
+    register int r;
+    register int *ptrA, *ptrB;
+
+    allocate();
+
+    ptrA = &(array[first_index]);
+    ptrB = &(ar[first_index]);
+    for( r=first_index; r < first_index+length; r++){
+         *ptrA++ = *ptrB++;
+    }
+};
+IntArray:: ~IntArray( void )
+{
+    deallocate();
+};
+
+// Assignment Operations
+IntArray& IntArray:: operator = (const IntArray &ar)
+{
+    register int r;
+    register int *ptrA, *ptrB;
+
+    if (length != ar.length){
+ 		deallocate();
+        length = ar.length;
+        first_index = ar.first_index;
+        allocate();
+    } else if(ar.first_index != first_index) {
+        this->shift_to(ar.first_index);
+    }
+
+    ptrA = &(array[first_index]);
+    ptrB = &(ar[first_index]);
+    for( r=first_index; r < first_index+length; r++){
+         *ptrA++ = *ptrB++;
+    }
+   
+    return *this;
+};
+
+//  Sub array Access Methods
+IntArray  IntArray:: operator() ( int fi, unsigned int len ) const 
+{
+    IntArray result( fi, len );
+    register int r, start, stop;
+    register int *ptrA, *ptrB;
+
+    start = fi >? first_index;
+    stop  = fi+len <? first_index+length;
+
+    ptrA = &(result[first_index]);
+    ptrB = &(array[first_index]);
+    for( r=start; r < stop; r++){
+         *ptrA++ = *ptrB++;
+    }
+
+    return result;
+};
+
+IntArray& IntArray:: shift_to ( int fi )
+{
+    register int i;
+
+    for(i=first_index; i<first_index+length; i++)
+        array[i] += ( fi - first_index );
+
+	array -= ( fi - first_index );
+    first_index = fi;
+
+    return *this;
+};
+
+ostream & operator << (ostream &cbuf, const IntArray &Array)
+{
+    register int r;
+
+    cbuf << "at ( " << Array.first_index << " )\n";
+    if( Array.is_empty() )
+        cbuf << "Null Array\n";
+    else {
+		for (r=Array.first_index; r < Array.first_index + Array.length; r++){
+			cbuf << Array[r] << "  ";
+		}
+		cbuf << "\n";
+    }
+    return cbuf;
+};
+
+istream & operator >> (istream &cbuf, const IntArray &Array)
+{
+    register int r;
+
+    for (r=Array.first_index; r < Array.first_index + Array.length; r++){
+        cbuf >> Array[r];
+    }
+    return cbuf;
 };

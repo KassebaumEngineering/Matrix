@@ -2,20 +2,27 @@
 # Makefile for test of Matrix class
 #
 #  Revision:
-#  $Id: Makefile.gcc,v 1.2 1993/11/15 20:29:38 jak Exp $
+#  $Id: Makefile.gcc,v 1.3 1993/11/18 07:29:22 jak Exp $
 #
 #  History:
 #  $Log: Makefile.gcc,v $
-#  Revision 1.2  1993/11/15 20:29:38  jak
-#  Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
+#  Revision 1.3  1993/11/18 07:29:22  jak
+#  Added alot of increased functionality, including support for
+#  non-zero aligned matrices.  This supports dealing with
+#  arbitrary matrix partitions.  Also, LU decompositions are
+#  stored with the matrices the derived from, and are recovered
+#  rather than re-computed if a matrix is re-used.   -jak
+#
+# Revision 1.2  1993/11/15  20:29:38  jak
+# Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
 #*/
 # =====================================
 
 CC=gcc
-CFLAGS=-ggdb -O -DLIBGpp -DGCC
+CFLAGS=-ggdb -O -DLIBGpp -DGCC -Wall
 LIBS=-lm -lg++ -liostream
 
-SRC=Makefile.gcc Makefile.CC matrixtest.C Matrix.C Matrix.H 
+SRC=Makefile.gcc Makefile.CC matrixtest.C Matrix.C Matrix.H Linked_List_Template.H
 OBJ=matrixtest.o Matrix.o
 EXES=matrixtest
 
@@ -24,10 +31,10 @@ all: matrixtest
 matrixtest: matrixtest.o Matrix.o
 	$(CC) -o matrixtest $(CFLAGS) matrixtest.o Matrix.o $(LIBS)
 
-matrixtest.o: matrixtest.C Matrix.H
+matrixtest.o: matrixtest.C Matrix.H Linked_List_Template.H
 	$(CC) -c $(CFLAGS) matrixtest.C
 
-Matrix.o: Matrix.C
+Matrix.o: Matrix.C Matrix.H Linked_List_Template.H
 	$(CC) -c $(CFLAGS) Matrix.C
 
 clean:
