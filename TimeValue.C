@@ -15,10 +15,13 @@
 //
 // History:
 /*    $Log: TimeValue.C,v $
-/*    Revision 1.4  1993/11/24 03:45:02  jak
-/*    Added a division operator for time calculation for benchmarking
-/*    purposes.   -jak
+/*    Revision 1.5  1993/11/30 05:24:46  jak
+/*    Changed the implementation of the TimeValue Class.  -jak
 /*
+ * Revision 1.4  1993/11/24  03:45:02  jak
+ * Added a division operator for time calculation for benchmarking
+ * purposes.   -jak
+ *
  * Revision 1.3  1993/11/20  21:53:21  jak
  * Fixed a bug in the Linked_List_Template to allow it to be correctly
  * included and used in a library situation.  -jak
@@ -33,7 +36,7 @@
  * inc and dec ,methods for the reference count.  -jak
  **/
 //  ************************************************************
-static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.4 1993/11/24 03:45:02 jak Exp $";
+static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.5 1993/11/30 05:24:46 jak Exp $";
 
 #pragma implementation
 
@@ -49,40 +52,32 @@ TimeValue::TimeValue()
     struct timeval now;
     gettimeofday( &now, (struct timezone *)0);
 
-    seconds  = now.tv_sec;
-    micro_seconds = now.tv_usec;
+    the_time = (double) now.tv_sec + ((double) now.tv_usec / 1000000.0 );
 };
 
 TimeValue::TimeValue( const TimeValue& atime )
 {
-    seconds  = atime.seconds;
-    micro_seconds = atime.micro_seconds;
+    the_time = atime.the_time;
 };
 
 TimeValue::TimeValue( struct timeval & atime )
 {
-    seconds  = atime.tv_sec;
-    micro_seconds = atime.tv_usec;
+    the_time = (double) atime.tv_sec + ((double) atime.tv_usec / 1000000.0 );
 };
 
 TimeValue::TimeValue( float time ) // seconds
 {
-    seconds = (long) floor( fabs( (double) time ));
-    if( time < 0.0 ) seconds = 0 - seconds;
-    micro_seconds = (long)((time - (float)seconds)*1000000.0);
+    the_time = time;
 };
 
 TimeValue::TimeValue( double time) // seconds
 {
-    seconds = (long) floor( fabs( time ));
-    if( time < 0.0 ) seconds = 0 - seconds;
-    micro_seconds = (long)( (time - (double)seconds) * 1000000.0 );
+    the_time = time;
 };
 
 TimeValue::TimeValue( long secs, long mseconds )
 {
-    seconds  = secs;
-    micro_seconds = mseconds;
+    the_time = (double) secs + ((double) mseconds / 1000000.0 );
 };
 
 //
@@ -97,8 +92,7 @@ TimeValue::~TimeValue()
 //
 TimeValue& TimeValue::operator=(const TimeValue& atimeval)
 {
-    seconds  = atimeval.seconds;
-    micro_seconds = atimeval.micro_seconds;
+    the_time = atimeval.the_time;
 
     return *this;
 };
@@ -109,20 +103,8 @@ TimeValue& TimeValue::operator=(const TimeValue& atimeval)
 
 TimeValue operator+( const TimeValue& t1, const TimeValue& t2 )
 {
-    double result, op2;
-    //TimeValue result;
-
-    //result.seconds  = t1.secs() + t2.secs();
-    //result.micro_seconds  = t1.msecs() + t2.msecs();
-    //while( result.micro_seconds >= 1000000 ){
-    //    result.micro_seconds -= 1000000;
-    //    result.seconds += 1;
-    //};
-
-    result = (double) t1.secs() + ((double) t1.msecs() / 1000000.0 );
-    op2    = (double) t2.secs() + ((double) t2.msecs() / 1000000.0 );
-
-    result += op2;
+    double result;
+    result = t1.the_time + t2.the_time;
 
     return TimeValue( result );
 };
@@ -131,73 +113,52 @@ TimeValue  operator*(const TimeValue& t, double scale )
 {
     double result;
 
-    result = (double) t.seconds + ((double) t.micro_seconds / 1000000.0 );
-    return TimeValue( result*scale );
+    result = t.the_time * scale;
+    return TimeValue( result );
+};
+
+TimeValue  TimeValue::operator/( const TimeValue& t2 )
+{
+    double result;
+
+    result = the_time / t2.the_time;
+    return TimeValue( result );
+};
+
+TimeValue  operator/(const TimeValue& t1, double scale )
+{
+    double result;
+
+    result = t1.the_time / scale;
+    return TimeValue( result );
 };
 
 TimeValue operator-( const TimeValue& t1, const TimeValue& t2 )
 {
-    double result, op2;
+    double result;
 
-    result = (double) t1.secs() + ((double) t1.msecs()) / 1000000.0 ;
-    op2    = (double) t2.secs() + ((double) t2.msecs()) / 1000000.0 ;
-
-    result -= op2;
-
+    result = t1.the_time - t2.the_time;
     return TimeValue( result );
 };
 
 int operator>=( const TimeValue& t1, const TimeValue& t2 )
 {
-    long seconds, micro_seconds;
-
-    seconds =  t1.seconds - t2.seconds;
-    micro_seconds =  t1.micro_seconds - t2.micro_seconds;
-
-    if ( seconds < 0 ){
-        return 0;
-    } else if ( seconds == 0){
-        if( micro_seconds < 0)
-            return 0;
-        else
-            return 1;
-    } else /* seconds > 0 */ {
-        return 1;
-    }
+    return ( t1.the_time >= t2.the_time );
 };
 
 int operator<=( const TimeValue& t1, const TimeValue& t2 )
 {
-    long seconds, micro_seconds;
-
-    seconds =  t1.seconds - t2.seconds;
-    micro_seconds =  t1.micro_seconds - t2.micro_seconds;
-
-    if ( seconds > 0 ){
-        return 0;
-    } else if ( seconds == 0){
-        if( micro_seconds > 0)
-            return 0;
-        else
-            return 1;
-    } else /* seconds < 0 */ {
-        return 1;
-    }
+    return ( t1.the_time <= t2.the_time );
 };
 
 TimeValue& time_abs( TimeValue& atime )
 {
-    if( !(atime >= TimeValue( 0,0 )) ){
-        return TimeValue( -atime.seconds, -atime.micro_seconds);
-    } else
-        return atime;
+    return TimeValue( fabs(atime.the_time) );
 };
 
 ostream & operator << (ostream &cbuf, const TimeValue& atime)
 {
-    double time;
-    time = ((double) atime.secs()) + ((double) atime.msecs())/1000000.0 ;
-    cbuf << time << " seconds ";
+    cbuf << atime.the_time << " seconds ";
     return cbuf;
 };
 

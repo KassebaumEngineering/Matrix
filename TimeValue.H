@@ -13,10 +13,13 @@
 //
 //  History:
 /*    $Log: TimeValue.H,v $
-/*    Revision 1.4  1993/11/24 03:45:04  jak
-/*    Added a division operator for time calculation for benchmarking
-/*    purposes.   -jak
+/*    Revision 1.5  1993/11/30 05:24:48  jak
+/*    Changed the implementation of the TimeValue Class.  -jak
 /*
+ * Revision 1.4  1993/11/24  03:45:04  jak
+ * Added a division operator for time calculation for benchmarking
+ * purposes.   -jak
+ *
  * Revision 1.3  1993/11/20  21:53:22  jak
  * Fixed a bug in the Linked_List_Template to allow it to be correctly
  * included and used in a library situation.  -jak
@@ -34,19 +37,19 @@
 #ifndef _TimeValue_H
 #define _TimeValue_H
 
-static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.4 1993/11/24 03:45:04 jak Exp $";
+static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.5 1993/11/30 05:24:48 jak Exp $";
 
 #pragma interface 
 
 #include <iostream.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <math.h>
 //FYI-   struct timeval { long tv_sec;  long tv_usec; };
 
 class TimeValue {
 public:
-    long    seconds;       // seconds since 1970
-    long    micro_seconds; // in micro-seconds
+    double  the_time;
 
 //  Constructors and Destructors
     TimeValue( void );
@@ -58,12 +61,13 @@ public:
     ~TimeValue( void );
 
     inline long msecs( void ) const {
-        return micro_seconds;
+        return (long)((the_time - floor( the_time ))*1000000.0);
     };
     inline long secs( void ) const {
-        return seconds;
+        return (long)floor( the_time );
     };
     TimeValue&  operator=( const TimeValue& );
+    TimeValue   operator/( const TimeValue& );
 
     friend TimeValue   operator+ ( const TimeValue&, const TimeValue&);
     friend TimeValue   operator- ( const TimeValue&, const TimeValue&);
@@ -71,9 +75,7 @@ public:
     friend int         operator<=( const TimeValue&, const TimeValue&);
 
     friend TimeValue   operator *( const TimeValue&, double );
-    friend TimeValue operator/( const TimeValue& t, double scale){
-        return t * (1.0 / scale);
-    };
+    friend TimeValue   operator /( const TimeValue&, double );
     friend TimeValue&   time_abs ( TimeValue& );
 
     friend ostream & operator << (ostream &, const TimeValue&);
