@@ -12,19 +12,19 @@
 //  concepts and direction. 
 //
 // Known Bugs:
-//  Apparently, when a Matrix not allocated at (0,0) offset is
-//  LU decomposed, the program will segmentation fault trying to
-//  allocate space for an empty Linked_List<Composition>.  Cause is
-//  unknown.
 //
 //  Revision:
-/*  $Id: Matrix.H,v 1.9 1993/11/23 21:06:55 jak Exp $
+/*  $Id: Matrix.H,v 1.10 1993/11/24 00:13:58 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.9  1993/11/23 21:06:55  jak
-/*  Bug Fixes especially for rare cases of NUll Matrices.  -jak
+/*  Revision 1.10  1993/11/24 00:13:58  jak
+/*  Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
+/*  deleted in LU_Decmposition. -jak
 /*
+ * Revision 1.9  1993/11/23  21:06:55  jak
+ * Bug Fixes especially for rare cases of NUll Matrices.  -jak
+ *
  * Revision 1.8  1993/11/21  08:45:47  jak
  * Changes to inverse and divide to handle the case of a single element
  * matrix as a scalar.  Also fixed the Matrix operator [] to return the
@@ -58,7 +58,7 @@
 
 #ifndef _Matrix_H
 #define _Matrix_H
-static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.9 1993/11/23 21:06:55 jak Exp $";
+static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.10 1993/11/24 00:13:58 jak Exp $";
 
 #pragma interface
 

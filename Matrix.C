@@ -12,13 +12,17 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.C,v 1.9 1993/11/23 21:06:53 jak Exp $
+/*  $Id: Matrix.C,v 1.10 1993/11/24 00:13:56 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.9  1993/11/23 21:06:53  jak
-/*  Bug Fixes especially for rare cases of NUll Matrices.  -jak
+/*  Revision 1.10  1993/11/24 00:13:56  jak
+/*  Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
+/*  deleted in LU_Decmposition. -jak
 /*
+ * Revision 1.9  1993/11/23  21:06:53  jak
+ * Bug Fixes especially for rare cases of NUll Matrices.  -jak
+ *
  * Revision 1.8  1993/11/21  08:45:45  jak
  * Changes to inverse and divide to handle the case of a single element
  * matrix as a scalar.  Also fixed the Matrix operator [] to return the
@@ -50,7 +54,7 @@
  **/
 // =====================================
 
-static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.9 1993/11/23 21:06:53 jak Exp $";
+static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.10 1993/11/24 00:13:56 jak Exp $";
 
 
 #ifdef LIBGpp
@@ -1086,14 +1090,10 @@ LU_Decomposition::LU_Decomposition( Matrix &matA )
 //
 // End LU routine
 // 
-    delete row_scaling;
-    {
-        LU_Decomposition *ptr;
-        ptr = new LU_Decomposition;
-        *ptr = ( *this );
-        matA.setDecompose( ptr, LU_DECOMP );
-    }
 
+	matA.setDecompose( new LU_Decomposition( *this ), LU_DECOMP );
+
+    delete &(row_scaling[first_row]); 
 };
 
 LU_Decomposition::~LU_Decomposition()
