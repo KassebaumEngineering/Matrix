@@ -15,10 +15,14 @@
 //
 // History:
 /*    $Log: TimeValue.C,v $
-/*    Revision 1.3  1993/11/20 21:53:21  jak
-/*    Fixed a bug in the Linked_List_Template to allow it to be correctly
-/*    included and used in a library situation.  -jak
+/*    Revision 1.4  1993/11/24 03:45:02  jak
+/*    Added a division operator for time calculation for benchmarking
+/*    purposes.   -jak
 /*
+ * Revision 1.3  1993/11/20  21:53:21  jak
+ * Fixed a bug in the Linked_List_Template to allow it to be correctly
+ * included and used in a library situation.  -jak
+ *
  * Revision 1.2  1993/11/20  06:10:02  jak
  * Bug fixes and optimization turned on.   -jak
  *
@@ -29,7 +33,7 @@
  * inc and dec ,methods for the reference count.  -jak
  **/
 //  ************************************************************
-static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.3 1993/11/20 21:53:21 jak Exp $";
+static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.4 1993/11/24 03:45:02 jak Exp $";
 
 #pragma implementation
 
@@ -121,6 +125,14 @@ TimeValue operator+( const TimeValue& t1, const TimeValue& t2 )
     result += op2;
 
     return TimeValue( result );
+};
+
+TimeValue  operator*(const TimeValue& t, double scale )
+{
+    double result;
+
+    result = (double) t.seconds + ((double) t.micro_seconds / 1000000.0 );
+    return TimeValue( result*scale );
 };
 
 TimeValue operator-( const TimeValue& t1, const TimeValue& t2 )

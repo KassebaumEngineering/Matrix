@@ -13,10 +13,14 @@
 //
 //  History:
 /*    $Log: TimeValue.H,v $
-/*    Revision 1.3  1993/11/20 21:53:22  jak
-/*    Fixed a bug in the Linked_List_Template to allow it to be correctly
-/*    included and used in a library situation.  -jak
+/*    Revision 1.4  1993/11/24 03:45:04  jak
+/*    Added a division operator for time calculation for benchmarking
+/*    purposes.   -jak
 /*
+ * Revision 1.3  1993/11/20  21:53:22  jak
+ * Fixed a bug in the Linked_List_Template to allow it to be correctly
+ * included and used in a library situation.  -jak
+ *
  * Revision 1.2  1993/11/20  06:10:03  jak
  * Bug fixes and optimization turned on.   -jak
  *
@@ -30,7 +34,7 @@
 #ifndef _TimeValue_H
 #define _TimeValue_H
 
-static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.3 1993/11/20 21:53:22 jak Exp $";
+static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.4 1993/11/24 03:45:04 jak Exp $";
 
 #pragma interface 
 
@@ -66,6 +70,10 @@ public:
     friend int         operator>=( const TimeValue&, const TimeValue&);
     friend int         operator<=( const TimeValue&, const TimeValue&);
 
+    friend TimeValue   operator *( const TimeValue&, double );
+    friend TimeValue operator/( const TimeValue& t, double scale){
+        return t * (1.0 / scale);
+    };
     friend TimeValue&   time_abs ( TimeValue& );
 
     friend ostream & operator << (ostream &, const TimeValue&);
