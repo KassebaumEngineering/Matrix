@@ -12,14 +12,20 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.C,v 1.7 1993/11/20 21:53:14 jak Exp $
+/*  $Id: Matrix.C,v 1.8 1993/11/21 08:45:45 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.7  1993/11/20 21:53:14  jak
-/*  Fixed a bug in the Linked_List_Template to allow it to be correctly
-/*  included and used in a library situation.  -jak
+/*  Revision 1.8  1993/11/21 08:45:45  jak
+/*  Changes to inverse and divide to handle the case of a single element
+/*  matrix as a scalar.  Also fixed the Matrix operator [] to return the
+/*  reference to the edge vector pointers so they can be used as lvalues
+/*  in an assignment.  -jak
 /*
+ * Revision 1.7  1993/11/20  21:53:14  jak
+ * Fixed a bug in the Linked_List_Template to allow it to be correctly
+ * included and used in a library situation.  -jak
+ *
  * Revision 1.6  1993/11/20  03:18:43  jak
  * Added the matrix determinant function.  -jak
  *
@@ -41,7 +47,7 @@
  **/
 // =====================================
 
-static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.7 1993/11/20 21:53:14 jak Exp $";
+static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.8 1993/11/21 08:45:45 jak Exp $";
 
 
 #ifdef LIBGpp
@@ -854,7 +860,9 @@ Matrix operator / (const Matrix &matA, const Matrix &matB)
   // recognize it, and transpose everything to fix it.
   // this is not guaranteed to succeed - but I think it will
   //
-    if ( matA.rows() < matA.cols() ){
+    if ((matB.rows() == 1)&&(matB.cols() == 1)){
+        return (matA * (1.0 / matB[matB.firstrow()][matB.firstcol()] ));
+    } else if ( matA.rows() < matA.cols() ){
         LU_Decomposition LU( transpose(matB) );
         return  transpose( LU.solve_for( transpose( matA ) ) );
     } else {
@@ -872,10 +880,15 @@ Matrix inverse( const Matrix &matA )
     if ((size = matA.rows()) != matA.cols())
         Abort("inverse( const Matrix& ):Singular! - Matrix Argument is not square!");
     // else
-	b = Identity(size);
-  	b.shift_to( matA.firstcol(), matA.firstrow() );
-    lu = LU_Decomposition( matA );
-    soln = ( lu.solve_for( b ) );
+    if ((matA.rows() == 1)&&(matA.cols() == 1)){
+        soln = matA;
+        soln[matA.firstcol()][matA.firstrow()] = 1.0 / matA[matA.firstcol()][matA.firstrow()];
+    } else {
+		b = Identity(size);
+		b.shift_to( matA.firstcol(), matA.firstrow() );
+		lu = LU_Decomposition( matA );
+		soln = ( lu.solve_for( b ) );
+    }
 	return soln;
 };
 

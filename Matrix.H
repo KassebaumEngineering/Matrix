@@ -12,14 +12,20 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.H,v 1.7 1993/11/20 21:53:16 jak Exp $
+/*  $Id: Matrix.H,v 1.8 1993/11/21 08:45:47 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.7  1993/11/20 21:53:16  jak
-/*  Fixed a bug in the Linked_List_Template to allow it to be correctly
-/*  included and used in a library situation.  -jak
+/*  Revision 1.8  1993/11/21 08:45:47  jak
+/*  Changes to inverse and divide to handle the case of a single element
+/*  matrix as a scalar.  Also fixed the Matrix operator [] to return the
+/*  reference to the edge vector pointers so they can be used as lvalues
+/*  in an assignment.  -jak
 /*
+ * Revision 1.7  1993/11/20  21:53:16  jak
+ * Fixed a bug in the Linked_List_Template to allow it to be correctly
+ * included and used in a library situation.  -jak
+ *
  * Revision 1.6  1993/11/20  03:18:45  jak
  * Added the matrix determinant function.  -jak
  *
@@ -43,7 +49,7 @@
 
 #ifndef _Matrix_H
 #define _Matrix_H
-static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.7 1993/11/20 21:53:16 jak Exp $";
+static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.8 1993/11/21 08:45:47 jak Exp $";
 
 #pragma interface
 
@@ -153,7 +159,7 @@ public:
     inline int firstrow( void ) const { return first_row;    };
     inline unsigned int cols( void ) const { return number_of_cols; };
     inline int firstcol( void ) const { return first_col; };
-    inline float* operator [] ( int i ) const { return m[ i ]; };
+    inline float* & operator [] ( int i ) const { return m[ i ]; };
     inline int has_element( int i, int j) const {
         if (     (i <  first_row) 
               || (i >= first_row + number_of_rows ) 
