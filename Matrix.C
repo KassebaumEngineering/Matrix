@@ -1,6 +1,28 @@
 // 
-// Implementation of 2-D MAtrix Class
+// Implementation of 2D Matrix Class
 //
+//  Author: John Kassebaum
+//  
+// 
+//  This file and it's contents are my unique creation, and you
+//  can't have it.  I retain all copy rights.  I may from time to time 
+//  grant license to others to use it, but I retain ownership of
+//  MY software.  I hereby give credit my classes in Linear Algenbra and 
+//  and materials which I have read (especially Numerical Recipes in C) for 
+//  concepts and direction. 
+//
+//  Revision:
+/*  $Id: Matrix.C,v 1.3 1993/11/15 20:29:39 jak Exp $
+ */
+//  History:
+/*  $Log: Matrix.C,v $
+/*  Revision 1.3  1993/11/15 20:29:39  jak
+/*  Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
+/**/
+// =====================================
+
+static char rcsid_C[] =  "$Id: Matrix.C,v 1.3 1993/11/15 20:29:39 jak Exp $";
+
 
 #ifdef LIBGpp
 #include <new.h>
@@ -24,7 +46,7 @@ Matrix::Matrix(unsigned short r, unsigned short c)
     myColumns = c;
 
     newmat = (float *) new float[ r * c ];
-    m = (float **) new char[ sizeof(float*) * r ];
+    m = (float **) new float*[ sizeof(float*) * r ];
 
     if (newmat == (float  *)0 ) cerr << "newmat == 0 !\n";	
     if (m      == (float **)0 ) cerr << "m == 0 !\n";
@@ -38,7 +60,7 @@ Matrix::Matrix(unsigned short r, unsigned short c)
     }
 };
 
-Matrix::Matrix(Matrix &matA)    // Copy Constructor
+Matrix::Matrix(const Matrix &matA)    // Copy Constructor
 {
     int i;
     float *newmat, *ptr;
@@ -47,7 +69,7 @@ Matrix::Matrix(Matrix &matA)    // Copy Constructor
     myColumns = matA.cols();
 
     newmat = (float *) new float[ myRows * myColumns ];
-    m = (float **) new char[ sizeof(float*) * myRows];
+    m = (float **) new float*[ sizeof(float*) * myRows];
 
     if (newmat == (float  *)0 ) cerr << "newmat == 0 !\n";	
     if (m      == (float **)0 ) cerr << "m == 0 !\n";
@@ -68,28 +90,32 @@ Matrix::~Matrix( void )
     delete  m;
 };
 
-Matrix& Matrix::operator=(Matrix &matB)   // performs a copy
+Matrix& Matrix::operator=(const Matrix &matB)   // performs a copy
 {
-    Matrix *result;
     register short int r,c;
-    float *ptr_A, *ptr_B;
+    register float *newmat, *ptr;
 
-    result = this;
     if ((matB.rows() != myRows) || (matB.cols() != myColumns)){
-        delete result;
-        result = new Matrix( matB.rows(), matB.cols() );
-    }
-    for( r=0; r<(int)myRows; r++){
-        ptr_A = (*result)[r];
-        ptr_B = matB[r];
-        for( c=0; c<(int)matB.cols(); c++)
-            *ptr_A++ = *ptr_B++;
+        delete *m;
+        delete m;
+        myRows    = matB.rows();
+        myColumns = matB.cols();
+		newmat = (float *) new float[ myRows * myColumns ];
+		m = (float **) new float*[ sizeof(float*) * myRows];
+		for (r = 0; r< (int)myRows; r++){
+			m[r] = &(newmat[ r * myColumns ]);
+		}
     }
 
-    return (*result);
+    ptr = matB[0];
+    for( r=0; r < (int)myRows*(int)myColumns; r++){
+        *newmat++ = *ptr++;
+    }
+
+    return (*this);
 };
 
-Matrix& transpose( Matrix &matA )
+Matrix& transpose( const Matrix &matA )
 {
     register float *ptr_r;
     register unsigned short r,c;
@@ -108,7 +134,7 @@ Matrix& transpose( Matrix &matA )
     return (*result);
 };
 
-Matrix& operator+( Matrix &matA, Matrix &matB )
+Matrix& operator+( const Matrix &matA, const Matrix &matB )
 {
     Matrix *result;
     register short int r,c, Rows, Cols;
@@ -132,7 +158,7 @@ Matrix& operator+( Matrix &matA, Matrix &matB )
     return (*result);
 };
 
-Matrix& operator-( Matrix &matA, Matrix &matB )
+Matrix& operator-( const Matrix &matA, const Matrix &matB )
 {
     Matrix *result;
     register short int r,c, Rows, Cols;
@@ -156,7 +182,7 @@ Matrix& operator-( Matrix &matA, Matrix &matB )
     return (*result);
 };
 
-Matrix& operator*( Matrix &matA, Matrix &matB )
+Matrix& operator*( const Matrix &matA, const Matrix &matB )
 {    
     Matrix *result;
     register unsigned short r,c,q;
@@ -200,7 +226,7 @@ Matrix& operator*( Matrix &matA, Matrix &matB )
     return (*result * 0.0);
 };
 
-Matrix& operator*( float scalar, Matrix &matA )
+Matrix& operator*( float scalar, const Matrix &matA )
 {
     Matrix *result;
     register short int r,c, Rows, Cols;
@@ -214,7 +240,7 @@ Matrix& operator*( float scalar, Matrix &matA )
     return (*result);
 };
 
-Matrix& operator+( Matrix &matA, float scalar){
+Matrix& operator+( const Matrix &matA, float scalar){
     Matrix *result;
     register short int r,c, Rows, Cols;
 
@@ -227,57 +253,34 @@ Matrix& operator+( Matrix &matA, float scalar){
     return (*result);
 };
 
-#ifndef GCC
-Matrix& map( float (*f)(float), Matrix &matA){
-#else
-Matrix& map( float (*f)( ), Matrix &matA){
-#endif
+Matrix& map( float (*f)(float), const Matrix &matA){
     Matrix *result;
     register short int r,c, Rows, Cols;
-
-#ifdef GCC
-    float (*func)( float ) = (float (*)( float ))f;
-#endif
-    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
-
-    for( r=0; r<Rows; r++)
-        for( c=0; c<Cols; c++)
-#ifdef GCC
-            (*result)[r][c] = func( matA[r][c] );
-#else
-            (*result)[r][c] = f( matA[r][c] );
-#endif
-
-    return (*result);
-};
-
-#ifndef GCC
-Matrix& map( float (*f)(float,float), Matrix &matA, Matrix &matB){
-#else
-Matrix& map( float (*f)( ), Matrix &matA, Matrix &matB){
-#endif
-
-    Matrix *result;
-    register short int r,c, Rows, Cols;
-
-#ifdef GCC
-    float (*func)( float, float ) = (float (*)( float, float ))f;
-#endif
 
     result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
 
     for( r=0; r<Rows; r++)
         for( c=0; c<Cols; c++)
-#ifdef GCC
-            (*result)[r][c] = func( matA[r][c] , matB[r][c]);
-#else
-            (*result)[r][c] = f( matA[r][c] , matB[r][c]);
-#endif
+            (*result)[r][c] = (*f)( matA[r][c] );
 
     return (*result);
 };
 
-Matrix& operator^( Matrix &matA, Matrix &matB){
+Matrix& map( float (*f)(float,float), const Matrix &matA, const Matrix &matB){
+
+    Matrix *result;
+    register short int r,c, Rows, Cols;
+
+    result = new Matrix( Rows = matA.rows(), Cols = matA.cols() );
+
+    for( r=0; r<Rows; r++)
+        for( c=0; c<Cols; c++)
+            (*result)[r][c] = (*f)( matA[r][c] , matB[r][c]);
+
+    return (*result);
+};
+
+Matrix& operator^( const Matrix &matA, const Matrix &matB){
     Matrix *result;
     register short int r,c, Rows, Cols;
 
@@ -290,7 +293,7 @@ Matrix& operator^( Matrix &matA, Matrix &matB){
     return (*result);
 };
 
-Matrix& operator%( Matrix &matA, Matrix &matB){
+Matrix& operator%( const Matrix &matA, const Matrix &matB){
     Matrix *result;
     register short int r,c, Rows, Cols;
 
@@ -303,15 +306,15 @@ Matrix& operator%( Matrix &matA, Matrix &matB){
     return (*result);
 };
 
-ostream& operator << (ostream &cbuf, Matrix &matA)
+ostream & operator << (ostream &cbuf, const Matrix &matA)
 {
     register float *ptr;
     register unsigned short r,c;
 
     for (r=0; r<matA.rows(); r++){
         ptr = matA[r];
-        for (c=0; c<matA.cols(); c++){
-            cbuf << *ptr++;   cbuf << "\t";
+        for (c=0; c< matA.cols(); c++){
+            cbuf << *ptr++ << "\t";
         }
         cbuf << "\n";
     }
@@ -319,7 +322,7 @@ ostream& operator << (ostream &cbuf, Matrix &matA)
     return cbuf;
 };
 
-istream& operator >> (istream &cbuf, Matrix &matA)
+istream & operator >> (istream &cbuf, const Matrix &matA)
 {
     register float *ptr;
     register unsigned short r,c;
@@ -333,7 +336,7 @@ istream& operator >> (istream &cbuf, Matrix &matA)
     return cbuf;
 };
 
-Matrix& operator / (Matrix &matA, Matrix &matB)
+Matrix& operator / (const Matrix &matA, const Matrix &matB)
 {
   // solve X = matA / matB
   // means :
@@ -355,7 +358,7 @@ Matrix& operator / (Matrix &matA, Matrix &matB)
     }
 };
 
-Matrix& inverse( Matrix &matA)
+Matrix& inverse( const Matrix &matA )
 {
     register unsigned short r;
     unsigned short size;
@@ -373,7 +376,7 @@ Matrix& inverse( Matrix &matA)
     }    
 };
 
-LU_Decomp::LU_Decomp( Matrix &matA )
+LU_Decomp::LU_Decomp( const Matrix &matA )
 {
 // This algorithm is a distinct implementation of an algorithm found
 // in Numerical Recipes in C.  The ideas expressed as code here, were 
@@ -394,7 +397,7 @@ LU_Decomp::LU_Decomp( Matrix &matA )
 //
     size = matA.rows();
     m = (float *) new (float[ size * size ]);
-    lumat = (float **) new char[ sizeof(float*) * size];
+    lumat = (float **) new float*[ sizeof(float*) * size];
     
     for ( row=0; row<size; row++){
         lumat[row] = &( m[ row*size ] );
@@ -425,19 +428,18 @@ LU_Decomp::LU_Decomp( Matrix &matA )
 
         max = 0.0;
         for( col=0; col<size; col++ ){
-            tempval = lumat[row][col];
-            tempval = (-tempval > tempval)? -tempval : tempval;
+            tempval = fabs( lumat[row][col] );
             if(tempval > max) max = tempval;
         }
         if (max = 0.0) cerr << "Matrix::LU_Decomp - Singular Matrix\n";
         row_scaling[ row ] = 1.0 / max;
     }
 
-// Crout's Method
+// Crout's Method of Gaussian Elimination
 //
     for( col=0; col<size; col++){
         float sum, max, tempval;
-        unsigned short max_index;
+        unsigned int max_index;
 
         for( row=0; row<col; row++) {
             sum = lumat[row][col];
@@ -452,7 +454,7 @@ LU_Decomp::LU_Decomp( Matrix &matA )
             for( k=0; k<col; k++)
                 sum -= lumat[row][k] * lumat[k][col];
             lumat[row][col] = sum;
-            if((tempval = row_scaling[row] * (-sum > sum)? -sum:sum) >= max ){
+            if((tempval = row_scaling[row] * fabs( sum )) >= max ){
                 max_index = row;
                 max = tempval;
             }
@@ -488,7 +490,7 @@ LU_Decomp::~LU_Decomp()
     delete  row_permute;
 };
 
-Matrix& LU_Decomp::L()
+Matrix& LU_Decomp::L() const
 {    
     Matrix *result;
     register short int row, col;
@@ -519,7 +521,7 @@ Matrix& LU_Decomp::L()
     return (*result);
 };
 
-Matrix& LU_Decomp::U()
+Matrix& LU_Decomp::U() const
 {
     Matrix *result;
     register short int row, col;
@@ -538,7 +540,7 @@ Matrix& LU_Decomp::U()
     return (*result);
 };
 
-Matrix& LU_Decomp::solve_for( Matrix &matA )
+Matrix& LU_Decomp::solve_for( const Matrix &matA )
 {
     Matrix *result;
     register short row, col;

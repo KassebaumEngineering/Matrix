@@ -1,31 +1,25 @@
-# Makefile for test of matrix class
 #
+# Makefile for test of Matrix class
+#
+#  Revision:
+#  $Id: Makefile.gcc,v 1.2 1993/11/15 20:29:38 jak Exp $
+#
+#  History:
+#  $Log: Makefile.gcc,v $
+#  Revision 1.2  1993/11/15 20:29:38  jak
+#  Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
+#*/
+# =====================================
 
-CC=/usr/local/bin/gcc
-CFLAGS=-g -O -DLIBGpp -DGCC
-LIBS=-lg++ -lm
+CC=gcc
+CFLAGS=-ggdb -O -DLIBGpp -DGCC
+LIBS=-lm -lg++ -liostream
 
-SRC=Makefile.gcc Makefile.CC matrixtest.C Matrix.C Matrix.H simple.C twolevel.C trial2.C
+SRC=Makefile.gcc Makefile.CC matrixtest.C Matrix.C Matrix.H 
+OBJ=matrixtest.o Matrix.o
+EXES=matrixtest
 
-all: matrixtest simple twolevel trial2
-
-twolevel: twolevel.o Matrix.o
-	$(CC) -o twolevel $(CFLAGS) twolevel.o Matrix.o $(LIBS)
-
-twolevel.o: twolevel.C Matrix.H
-	$(CC) -c $(CFLAGS) twolevel.C
-
-trial2: trial2.o Matrix.o
-	$(CC) -o trial2 $(CFLAGS) trial2.o Matrix.o $(LIBS)
-
-trial2.o: trial2.C Matrix.H
-	$(CC) -c $(CFLAGS) trial2.C
-
-simple: simple.o Matrix.o
-	$(CC) -o simple $(CFLAGS) simple.o Matrix.o $(LIBS)
-
-simple.o: simple.C Matrix.H
-	$(CC) -c $(CFLAGS) simple.C
+all: matrixtest 
 
 matrixtest: matrixtest.o Matrix.o
 	$(CC) -o matrixtest $(CFLAGS) matrixtest.o Matrix.o $(LIBS)
@@ -37,7 +31,7 @@ Matrix.o: Matrix.C
 	$(CC) -c $(CFLAGS) Matrix.C
 
 clean:
-	rm -f *.o simple matrixtest twolevel trial2
+	rm -f $(OBJ) $(EXES)
 
 dist: $(SRC)
 	mkdir Matrix

@@ -1,3 +1,27 @@
+//
+// Test program for the Matrix Class
+//
+//  Author: John Kassebaum
+//  
+// 
+//  This file and it's contents are my unique creation, and you
+//  can't have it.  I retain all copy rights.  I may from time to time 
+//  grant license to others to use it, but I retain ownership of
+//  MY software.  I hereby give credit my classes in Linear Algenbra and 
+//  and materials which I have read (especially Numerical Recipes in C) for 
+//  concepts and direction. 
+//
+//  Revision:
+/*  $Id: matrixtest.C,v 1.3 1993/11/15 20:29:42 jak Exp $
+ */
+//  History:
+/*  $Log: matrixtest.C,v $
+/*  Revision 1.3  1993/11/15 20:29:42  jak
+/*  Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
+/**/
+// =====================================
+
+static char rcsid_C[] =  "$Id: matrixtest.C,v 1.3 1993/11/15 20:29:42 jak Exp $";
 
 #ifdef LIBGpp
 #include <std.h>
@@ -7,11 +31,13 @@
 #include "Matrix.H"
 
 float square( float );
+
 float divide( float , float );
 
 main()
 {
     Matrix A(3,3), B(2,3), C(2,2), D(2,1), E(3,1), F(2,2);
+    Matrix *Big;
     LU_Decomp *LU;
 
     A[0][0] = 1; A[0][1] = 2; A[0][2] = -3;
@@ -41,7 +67,7 @@ main()
     cout << B;
 
     cout << "transpose( A ) = \n";
-    cout << transpose( A );
+    cout << (transpose( A ));
 
     cout << "B * A = \n";
     cout << (B * A);
@@ -58,11 +84,11 @@ main()
     cout << "A * 5.0\n";
     cout << (A * 5.0);
 
-    cout << "map( &square, A ) = \n";
-    cout << ( map( &square, A ) );
+    cout << "map( square, A ) = \n";
+    cout << ( map( square, A ) );
 
-    cout << "map( &divide, A ) = \n";
-    cout << ( map( &divide, A, A ) );
+    cout << "map( divide, A, A) = \n";
+    cout << ( map( divide, A, A ) );
 
     cout << "A ^ A = \n";
     cout << (A ^ A);
@@ -72,19 +98,40 @@ main()
 
     cout << "LU_Decomp( A ) = \n";
     LU = new LU_Decomp( A );
-    cout << LU->L() << "*\n\n" << LU->U();
+    cout << (LU->L()) << "*\n\n" << (LU->U());
 
     cout << "L * U = \n";
     cout << ( LU->L() * LU->U() );
 
     cout << "LU->solve_for( E ) = \n";
-    cout << LU->solve_for( E );
+    cout << (LU->solve_for( E ));
 
     cout << "D / C  = \n";
     cout << ( D/C );
 
     cout << "1.0 / F = \n";
-    cout << 1.0 / F;
+    cout << (1.0 / F);
+
+    {
+        int i,j;
+
+        Big = new Matrix(100,100);
+        for(i=0;i<100;i++)
+            for(j=0;j<100;j++)
+                (*Big)[i][j] = (i==j)?1:0;
+    }
+//    cout << "Big = \n";
+//    cout << *Big;
+
+//    cout << "transpose( *Big ) = \n";
+//    cout << transpose( *Big );
+
+//    cout << "LU_Decomp( *Big ) = \n";
+//    LU = new LU_Decomp( *Big );
+//    cout << (LU->L()) << "*\n\n" << (LU->U());
+
+    cout << "1.0 / *Big = \n";
+    cout << ( 1.0 / (*Big) );
 };
 
 float square( float a ){

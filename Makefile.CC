@@ -1,5 +1,15 @@
-# Makefile for test of matrix class
 #
+# Makefile for test of Matrix class
+#
+#  Revision:
+#  $Id: Makefile.CC,v 1.2 1993/11/15 20:29:36 jak Exp $
+#
+#  History:
+#  $Log: Makefile.CC,v $
+#  Revision 1.2  1993/11/15 20:29:36  jak
+#  Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
+#*/
+# =====================================
 
 CC=CC
 CFLAGS=-O -DATT_CC
