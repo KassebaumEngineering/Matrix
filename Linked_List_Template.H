@@ -64,12 +64,16 @@
 // ------------------------------------------------------------------
 //  History:
 /*    $Log: Linked_List_Template.H,v $
-/*    Revision 1.2  1993/11/20 02:19:36  jak
-/*    Added Time and resource usage programs.  Also, the class is now
-/*    built into a library (libMatrix.a).  The Linked_List now has
-/*    reference counts and is correctly copied and deleted by the new
-/*    inc and dec ,methods for the reference count.  -jak
+/*    Revision 1.3  1993/11/20 21:53:09  jak
+/*    Fixed a bug in the Linked_List_Template to allow it to be correctly
+/*    included and used in a library situation.  -jak
 /*
+ * Revision 1.2  1993/11/20  02:19:36  jak
+ * Added Time and resource usage programs.  Also, the class is now
+ * built into a library (libMatrix.a).  The Linked_List now has
+ * reference counts and is correctly copied and deleted by the new
+ * inc and dec ,methods for the reference count.  -jak
+ *
  * Revision 1.1  1993/11/18  07:29:20  jak
  * Added alot of increased functionality, including support for
  * non-zero aligned matrices.  This supports dealing with
@@ -81,9 +85,11 @@
 #ifndef _Linked_List_H
 #define _Linked_List_H
 
-static char rcsid_Linked_List_H[] = "$Id: Linked_List_Template.H,v 1.2 1993/11/20 02:19:36 jak Exp $";
+static char rcsid_Linked_List_H[] = "$Id: Linked_List_Template.H,v 1.3 1993/11/20 21:53:09 jak Exp $";
 
-template <class T> class Linked_List;
+#pragma interface
+
+//template <class T> class Linked_List;
 
 template <class T> class LL_Node {
     friend class Linked_List<T>;
@@ -118,8 +124,8 @@ public:
 
 // Other Methods
     void  add ( T* , int  );
-    void  del ( int  );
     void  del ( void );
+    void  del ( int );
     T*    next ( void );
     T*    find ( int  ) const;
     void  relabel ( int , int  );
@@ -148,7 +154,7 @@ public:
 //  CONSTRUCTOR
 //
 template <class T>
-Linked_List<T>::Linked_List() : head(0), current(0), Ref_count(0)
+Linked_List<T>::Linked_List( void ) : head(0), current(0), Ref_count(0)
 {
 };
 
@@ -156,7 +162,7 @@ Linked_List<T>::Linked_List() : head(0), current(0), Ref_count(0)
 //  Destructor
 //
 template <class T>
-Linked_List<T>::~Linked_List() 
+Linked_List<T>::~Linked_List( void ) 
 {
     LL_Node<T> *index_ptr, *next_index_ptr;
     index_ptr = head;
@@ -179,7 +185,7 @@ void Linked_List<T>::add(T *thing, int name ){
 };
 
 template <class T>
-void Linked_List<T>::del(){
+void Linked_List<T>::del(void){
     LL_Node<T> *index_ptr, *prev_index_ptr;
     
     index_ptr = current;

@@ -12,13 +12,17 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.H,v 1.6 1993/11/20 03:18:45 jak Exp $
+/*  $Id: Matrix.H,v 1.7 1993/11/20 21:53:16 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.6  1993/11/20 03:18:45  jak
-/*  Added the matrix determinant function.  -jak
+/*  Revision 1.7  1993/11/20 21:53:16  jak
+/*  Fixed a bug in the Linked_List_Template to allow it to be correctly
+/*  included and used in a library situation.  -jak
 /*
+ * Revision 1.6  1993/11/20  03:18:45  jak
+ * Added the matrix determinant function.  -jak
+ *
  * Revision 1.5  1993/11/20  02:19:41  jak
  * Added Time and resource usage programs.  Also, the class is now
  * built into a library (libMatrix.a).  The Linked_List now has
@@ -39,20 +43,24 @@
 
 #ifndef _Matrix_H
 #define _Matrix_H
-static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.6 1993/11/20 03:18:45 jak Exp $";
+static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.7 1993/11/20 21:53:16 jak Exp $";
+
+#pragma interface
 
 #include <iostream.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <strings.h>
-#include "Linked_List_Template.H"
 
-const float TINY = 1.0e-20; 	// some small number not equal to zero
+#include "Linked_List_Template.H"
 
 class Matrix;
 class Composition;
 class LU_Decomposition;
 class IntArray;
+
+const float TINY = 1.0e-20; 	// some small number not equal to zero
+
 
 //
 // Decomposition Components (keys for linked list)

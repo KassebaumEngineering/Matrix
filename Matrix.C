@@ -12,13 +12,17 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.C,v 1.6 1993/11/20 03:18:43 jak Exp $
+/*  $Id: Matrix.C,v 1.7 1993/11/20 21:53:14 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.6  1993/11/20 03:18:43  jak
-/*  Added the matrix determinant function.  -jak
+/*  Revision 1.7  1993/11/20 21:53:14  jak
+/*  Fixed a bug in the Linked_List_Template to allow it to be correctly
+/*  included and used in a library situation.  -jak
 /*
+ * Revision 1.6  1993/11/20  03:18:43  jak
+ * Added the matrix determinant function.  -jak
+ *
  * Revision 1.5  1993/11/20  02:19:39  jak
  * Added Time and resource usage programs.  Also, the class is now
  * built into a library (libMatrix.a).  The Linked_List now has
@@ -37,7 +41,7 @@
  **/
 // =====================================
 
-static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.6 1993/11/20 03:18:43 jak Exp $";
+static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.7 1993/11/20 21:53:14 jak Exp $";
 
 
 #ifdef LIBGpp
@@ -46,6 +50,8 @@ static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.6 1993/11/20 03:18:43 jak Exp
 
 #include <stdlib.h>
 #include <math.h>
+
+#pragma implementation
 #include "Matrix.H"
 
 void Abort( char *s ){

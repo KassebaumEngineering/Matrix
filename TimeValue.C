@@ -15,9 +15,13 @@
 //
 // History:
 /*    $Log: TimeValue.C,v $
-/*    Revision 1.2  1993/11/20 06:10:02  jak
-/*    Bug fixes and optimization turned on.   -jak
+/*    Revision 1.3  1993/11/20 21:53:21  jak
+/*    Fixed a bug in the Linked_List_Template to allow it to be correctly
+/*    included and used in a library situation.  -jak
 /*
+ * Revision 1.2  1993/11/20  06:10:02  jak
+ * Bug fixes and optimization turned on.   -jak
+ *
  * Revision 1.1  1993/11/20  02:19:45  jak
  * Added Time and resource usage programs.  Also, the class is now
  * built into a library (libMatrix.a).  The Linked_List now has
@@ -25,8 +29,9 @@
  * inc and dec ,methods for the reference count.  -jak
  **/
 //  ************************************************************
-static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.2 1993/11/20 06:10:02 jak Exp $";
+static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.3 1993/11/20 21:53:21 jak Exp $";
 
+#pragma implementation
 
 #include "TimeValue.H"
 #include <sys/time.h>
