@@ -11,17 +11,26 @@
 //  and materials which I have read (especially Numerical Recipes in C) for 
 //  concepts and direction. 
 //
+// Known Bugs:
+//  Apparently, when a Matrix not allocated at (0,0) offset is
+//  LU decomposed, the program will segmentation fault trying to
+//  allocate space for an empty Linked_List<Composition>.  Cause is
+//  unknown.
+//
 //  Revision:
-/*  $Id: Matrix.H,v 1.8 1993/11/21 08:45:47 jak Exp $
+/*  $Id: Matrix.H,v 1.9 1993/11/23 21:06:55 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.8  1993/11/21 08:45:47  jak
-/*  Changes to inverse and divide to handle the case of a single element
-/*  matrix as a scalar.  Also fixed the Matrix operator [] to return the
-/*  reference to the edge vector pointers so they can be used as lvalues
-/*  in an assignment.  -jak
+/*  Revision 1.9  1993/11/23 21:06:55  jak
+/*  Bug Fixes especially for rare cases of NUll Matrices.  -jak
 /*
+ * Revision 1.8  1993/11/21  08:45:47  jak
+ * Changes to inverse and divide to handle the case of a single element
+ * matrix as a scalar.  Also fixed the Matrix operator [] to return the
+ * reference to the edge vector pointers so they can be used as lvalues
+ * in an assignment.  -jak
+ *
  * Revision 1.7  1993/11/20  21:53:16  jak
  * Fixed a bug in the Linked_List_Template to allow it to be correctly
  * included and used in a library situation.  -jak
@@ -49,7 +58,7 @@
 
 #ifndef _Matrix_H
 #define _Matrix_H
-static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.8 1993/11/21 08:45:47 jak Exp $";
+static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.9 1993/11/23 21:06:55 jak Exp $";
 
 #pragma interface
 
@@ -170,7 +179,7 @@ public:
             return 1;
     };
     inline int is_empty() const {
-        return m?0:1;
+        return &(m[first_row])?0:1;
     };
 
 // Matrix Operators
@@ -180,7 +189,7 @@ public:
     Matrix & operator -= ( float );
     Matrix & operator *= ( const Matrix& );
     Matrix & operator *= ( float );
-    Matrix & operator /= ( const Matrix& );
+    Matrix & operator /= ( Matrix& );
     inline Matrix & operator /= ( float scalar ){
         return (this->operator *= (1.0/scalar));
     };
@@ -204,7 +213,19 @@ public:
     friend Matrix operator + ( const Matrix&, const Matrix& );
     friend Matrix operator - ( const Matrix&, const Matrix& );
     friend Matrix operator * ( const Matrix&, const Matrix& );
-    friend Matrix operator / ( const Matrix&, const Matrix& );
+
+ // --------
+ // solve X = matA / matB
+ // means :
+ //  matB * X = matA
+ //         X = inverse( matB ) * matA
+ //  NOT
+ //  X * matB = matA
+ //         X = matA * inverse( matB );
+ // if the second case occurs, then the alg cannot
+ // recognize it. But you can transpose the input to fix it.
+    friend Matrix operator / ( Matrix&, Matrix& );
+ // --------
 
 // Scalar - Matrix Operations 
     friend Matrix operator * (float, const Matrix&);
@@ -225,16 +246,16 @@ public:
     friend inline Matrix operator - (const Matrix &matA ){
         return (-1.0 * matA);
     }
-    friend inline Matrix operator / (const Matrix &matA, float scalar){
+    friend inline Matrix operator / (Matrix &matA, float scalar){
         return ( ( 1.0/scalar ) * matA );
     }
-    friend inline Matrix operator / (float scalar, const Matrix &matA){
+    friend inline Matrix operator / (float scalar, Matrix &matA){
         return ( scalar * inverse( matA ) );
     }
 
 // Transformations
     friend Matrix transpose( const Matrix &); 
-    friend Matrix inverse( const Matrix &);
+    friend Matrix inverse( Matrix &);
 
 // Matrix elementwise functions (for signal processing)
     friend Matrix operator & ( const Matrix &, const Matrix &); // elementwise multiply
@@ -316,7 +337,8 @@ public:
     IntArray row_permute;
     Matrix   lumat;
 
-    LU_Decomposition( Matrix& = Matrix() );
+    LU_Decomposition( void );
+    LU_Decomposition( Matrix& );
     LU_Decomposition( const LU_Decomposition& );
     virtual ~LU_Decomposition( void );
 
