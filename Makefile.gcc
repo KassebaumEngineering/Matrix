@@ -2,16 +2,22 @@
 # Makefile for test of Matrix class
 #
 #  Revision:
-#  $Id: Makefile.gcc,v 1.3 1993/11/18 07:29:22 jak Exp $
+#  $Id: Makefile.gcc,v 1.4 1993/11/20 02:19:37 jak Exp $
 #
 #  History:
 #  $Log: Makefile.gcc,v $
-#  Revision 1.3  1993/11/18 07:29:22  jak
-#  Added alot of increased functionality, including support for
-#  non-zero aligned matrices.  This supports dealing with
-#  arbitrary matrix partitions.  Also, LU decompositions are
-#  stored with the matrices the derived from, and are recovered
-#  rather than re-computed if a matrix is re-used.   -jak
+#  Revision 1.4  1993/11/20 02:19:37  jak
+#  Added Time and resource usage programs.  Also, the class is now
+#  built into a library (libMatrix.a).  The Linked_List now has
+#  reference counts and is correctly copied and deleted by the new
+#  inc and dec ,methods for the reference count.  -jak
+#
+# Revision 1.3  1993/11/18  07:29:22  jak
+# Added alot of increased functionality, including support for
+# non-zero aligned matrices.  This supports dealing with
+# arbitrary matrix partitions.  Also, LU decompositions are
+# stored with the matrices the derived from, and are recovered
+# rather than re-computed if a matrix is re-used.   -jak
 #
 # Revision 1.2  1993/11/15  20:29:38  jak
 # Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
@@ -20,16 +26,22 @@
 
 CC=gcc
 CFLAGS=-ggdb -O -DLIBGpp -DGCC -Wall
-LIBS=-lm -lg++ -liostream
+LIBS=-lMatrix -lm -lg++ -liostream 
+INSTALL_LIB=/usr/local/lib
+INSTALL_INC=/usr/local/include
 
-SRC=Makefile.gcc Makefile.CC matrixtest.C Matrix.C Matrix.H Linked_List_Template.H
-OBJ=matrixtest.o Matrix.o
+SRC=Makefile.gcc Makefile.CC matrixtest.C Matrix.C Matrix.H \
+Linked_List_Template.H TimeValue.C TimeValue.H TimeUse.C TimeUse.H
+
+HEADERS=Matrix.H Linked_List_Template.H TimeValue.H TimeUse.H
+OBJ= Matrix.o TimeValue.o TimeUse.o
 EXES=matrixtest
+OTHER= matrixtest.o libMatrix.a
 
-all: matrixtest 
+all: libMatrix.a matrixtest 
 
-matrixtest: matrixtest.o Matrix.o
-	$(CC) -o matrixtest $(CFLAGS) matrixtest.o Matrix.o $(LIBS)
+matrixtest: matrixtest.o libMatrix.a
+	$(CC) -o matrixtest $(CFLAGS) matrixtest.o -L. $(LIBS)
 
 matrixtest.o: matrixtest.C Matrix.H Linked_List_Template.H
 	$(CC) -c $(CFLAGS) matrixtest.C
@@ -37,18 +49,37 @@ matrixtest.o: matrixtest.C Matrix.H Linked_List_Template.H
 Matrix.o: Matrix.C Matrix.H Linked_List_Template.H
 	$(CC) -c $(CFLAGS) Matrix.C
 
+TimeValue.o: TimeValue.C TimeValue.H
+	$(CC) -c $(CFLAGS) TimeValue.C
+
+TimeUse.o: TimeUse.C TimeUse.H Linked_List_Template.H TimeValue.H
+	$(CC) -c $(CFLAGS) TimeUse.C
+
+libMatrix.a: $(OBJ)
+	-rm -f libMatrix.a
+	ar cr libMatrix.a $(OBJ)
+	ranlib libMatrix.a
+
+install:
+	rm -f $(INSTALL_LIB)/libMatrix.a
+	cp libMatrix.a $(INSTALL_LIB)
+	ranlib $(INSTALL_LIB)/libMatrix.a
+	for i in $(HEADERS) ; do \
+	  cp $$i $(INSTALL_INC)/$$i ; \
+	done
+
 clean:
-	rm -f $(OBJ) $(EXES)
+	rm -f $(OBJ) $(EXES) $(OTHER)
 
 dist: $(SRC)
 	mkdir Matrix
-	cp Makefile.* Matrix
-	cp *.C Matrix
-	cp *.H Matrix
+	cp -p $(SRC) Matrix
+	for i in $(SRC) ; do \
+	  cp $$i Matrix/$$i ; \
+	done
 	tar crf - Matrix | compress -c > Matrix.tar.Z
 	rm -rf Matrix
 	uuencode Matrix.tar.Z Matrix.tar.Z > Matrix.uu
-	rm -rf Matrix.tar.Z
 	touch dist
 
 

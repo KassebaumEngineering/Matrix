@@ -20,8 +20,9 @@
 //    The destructor deletes all of the list as well as calling delete on
 //    all members in it's "datum" fields.  
 //
-//  void add( const T &object )
-//    The add() method places your object in the list.
+//  void add( T *object, int ident )
+//    The add() method places your object in the list with the identifier 
+//    "ident".
 //
 //  void del( void )
 //    The del() method will remove the current object from the list, 
@@ -63,18 +64,24 @@
 // ------------------------------------------------------------------
 //  History:
 /*    $Log: Linked_List_Template.H,v $
-/*    Revision 1.1  1993/11/18 07:29:20  jak
-/*    Added alot of increased functionality, including support for
-/*    non-zero aligned matrices.  This supports dealing with
-/*    arbitrary matrix partitions.  Also, LU decompositions are
-/*    stored with the matrices the derived from, and are recovered
-/*    rather than re-computed if a matrix is re-used.   -jak
-/**/
+/*    Revision 1.2  1993/11/20 02:19:36  jak
+/*    Added Time and resource usage programs.  Also, the class is now
+/*    built into a library (libMatrix.a).  The Linked_List now has
+/*    reference counts and is correctly copied and deleted by the new
+/*    inc and dec ,methods for the reference count.  -jak
+/*
+ * Revision 1.1  1993/11/18  07:29:20  jak
+ * Added alot of increased functionality, including support for
+ * non-zero aligned matrices.  This supports dealing with
+ * arbitrary matrix partitions.  Also, LU decompositions are
+ * stored with the matrices the derived from, and are recovered
+ * rather than re-computed if a matrix is re-used.   -jak
+ **/
 //  ******************************************************************
 #ifndef _Linked_List_H
 #define _Linked_List_H
 
-static char rcsid_Linked_List_H[] = "$Id: Linked_List_Template.H,v 1.1 1993/11/18 07:29:20 jak Exp $";
+static char rcsid_Linked_List_H[] = "$Id: Linked_List_Template.H,v 1.2 1993/11/20 02:19:36 jak Exp $";
 
 template <class T> class Linked_List;
 
@@ -100,6 +107,7 @@ public:
 template <class T> class Linked_List {
     friend class LL_Node<T>;
 private:
+    int Ref_count;
     LL_Node<T> *head;
     LL_Node<T> *current;
 
@@ -115,6 +123,15 @@ public:
     T*    next ( void );
     T*    find ( int  ) const;
     void  relabel ( int , int  );
+	
+	inline void inc_refcount( void ){
+	    Ref_count++;
+	};
+
+	inline void dec_refcount( void ){
+	    if( Ref_count-- <= 0 )
+		    delete this;
+	};
 
     inline void reset( void ){
         current = head;
@@ -131,7 +148,7 @@ public:
 //  CONSTRUCTOR
 //
 template <class T>
-Linked_List<T>::Linked_List() : head(0), current(0)
+Linked_List<T>::Linked_List() : head(0), current(0), Ref_count(0)
 {
 };
 

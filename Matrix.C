@@ -12,23 +12,29 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.C,v 1.4 1993/11/18 07:29:23 jak Exp $
+/*  $Id: Matrix.C,v 1.5 1993/11/20 02:19:39 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.4  1993/11/18 07:29:23  jak
-/*  Added alot of increased functionality, including support for
-/*  non-zero aligned matrices.  This supports dealing with
-/*  arbitrary matrix partitions.  Also, LU decompositions are
-/*  stored with the matrices the derived from, and are recovered
-/*  rather than re-computed if a matrix is re-used.   -jak
+/*  Revision 1.5  1993/11/20 02:19:39  jak
+/*  Added Time and resource usage programs.  Also, the class is now
+/*  built into a library (libMatrix.a).  The Linked_List now has
+/*  reference counts and is correctly copied and deleted by the new
+/*  inc and dec ,methods for the reference count.  -jak
 /*
+ * Revision 1.4  1993/11/18  07:29:23  jak
+ * Added alot of increased functionality, including support for
+ * non-zero aligned matrices.  This supports dealing with
+ * arbitrary matrix partitions.  Also, LU decompositions are
+ * stored with the matrices the derived from, and are recovered
+ * rather than re-computed if a matrix is re-used.   -jak
+ *
  * Revision 1.3  1993/11/15  20:29:39  jak
  * Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
  **/
 // =====================================
 
-static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.4 1993/11/18 07:29:23 jak Exp $";
+static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.5 1993/11/20 02:19:39 jak Exp $";
 
 
 #ifdef LIBGpp
@@ -47,6 +53,7 @@ void Abort( char *s ){
 Matrix::Matrix(unsigned int r, unsigned int c, const char*  aname) : 
 first_row(0), number_of_rows(r), first_col(0), number_of_cols(c), m(0)
 {
+    decomp_list = new Linked_List< Composition >;
     strncpy(name, aname, MAXNAMELEN-1); 
     allocate();
 };
@@ -54,6 +61,7 @@ first_row(0), number_of_rows(r), first_col(0), number_of_cols(c), m(0)
 Matrix::Matrix(unsigned int fr, unsigned int fc, int r, int c, const char* aname): 
 first_row(fr), number_of_rows(r), first_col(fc), number_of_cols(c), m(0)
 {
+    decomp_list = new Linked_List< Composition >;
     strncpy(name, aname, MAXNAMELEN-1);
     allocate();
 };
@@ -64,6 +72,9 @@ Matrix::Matrix(const Matrix &matA):  first_row(matA.first_row), number_of_rows(m
     register int r,c;
     register float *ptrA, *ptrB;
 
+    decomp_list = matA.decomp_list;
+	decomp_list->inc_refcount();
+	
     strncpy(name, matA.name, MAXNAMELEN-1);
  
     allocate();
@@ -79,6 +90,7 @@ Matrix::Matrix(const Matrix &matA):  first_row(matA.first_row), number_of_rows(m
 
 Matrix::~Matrix( void )
 {
+    decomp_list->dec_refcount();
     deallocate();
 };
 
@@ -131,6 +143,10 @@ Matrix& Matrix::operator=(const Matrix &matB)   // performs a copy
     register int r,c;
     register float *ptrB, *ptrA;
 
+	decomp_list->dec_refcount();
+    decomp_list = matB.decomp_list;
+	decomp_list->inc_refcount();
+
     if ((matB.number_of_rows != number_of_rows) || (matB.number_of_cols != number_of_cols)){
  		deallocate();
         number_of_rows = matB.number_of_rows;
@@ -140,6 +156,7 @@ Matrix& Matrix::operator=(const Matrix &matB)   // performs a copy
         allocate();
     } else 
         this->shift_to(matB.first_row, matB.first_col);
+
 
     for( r=first_row; r < first_row+number_of_rows; r++){
         ptrA = &(m[r][first_col]);
@@ -186,6 +203,9 @@ Matrix & Matrix::operator += ( const Matrix& matA )
     register int r,c;
     register float *ptr_r, *ptr_a;
 
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+	
     fr = first_row <? matA.first_row ;
     fc = first_col <? matA.first_col ;
     rows = first_row + number_of_rows >? matA.first_row + matA.number_of_rows;
@@ -223,6 +243,9 @@ Matrix & Matrix::operator += ( float scalar )
 {
     register int r,c;
 
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+
     for( r=first_row; r<number_of_rows; r++)
         for( c=first_col; c<number_of_cols; c++)
             m[r][c] += scalar;
@@ -235,6 +258,9 @@ Matrix & Matrix::operator -= ( const Matrix& matA)
     int fr,fc,rows,cols;
     register int r,c;
     register float *ptr_r, *ptr_a;
+
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
 
     fr = first_row <? matA.first_row ;
     fc = first_col <? matA.first_col ;
@@ -273,6 +299,9 @@ Matrix & Matrix::operator -= ( float scalar)
 {
     register int r,c;
 
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+
     for( r=first_row; r<number_of_rows; r++)
         for( c=first_col; c<number_of_cols; c++)
             m[r][c] -= scalar;
@@ -284,6 +313,9 @@ Matrix & Matrix::operator *= ( const Matrix& matA)
 {
     register int r,c,q;
     register float *ptr_r, *ptr_a, *ptr_b;
+
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
 
 // MxQ times QxN
     if ( number_of_cols == matA.number_of_rows ){
@@ -328,6 +360,9 @@ Matrix & Matrix::operator *= ( float scalar )
 {
     register int r,c;
 
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+
     for( r=first_row; r<number_of_rows; r++)
         for( c=first_col; c<number_of_cols; c++)
             m[r][c] *= scalar;
@@ -337,6 +372,9 @@ Matrix & Matrix::operator *= ( float scalar )
 
 Matrix & Matrix::operator /= ( const Matrix& matA)
 {
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+
     *this = *this / matA ;
 };
 
@@ -345,6 +383,9 @@ Matrix & Matrix::operator &= ( const Matrix& matA)
     int fr, fc, rows, cols;
     register int r,c;
     register float *ptr_r, *ptr_a, *ptr_b;
+
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
 
     fr = first_row >? matA.firstrow();
     fc = first_col >? matA.firstcol();
@@ -383,6 +424,9 @@ Matrix & Matrix::operator %= ( const Matrix & matA)
     register int r,c;
     register float *ptr_r, *ptr_a, *ptr_b;
 
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+
     fr = first_row >? matA.firstrow();
     fc = first_col >? matA.firstcol();
     rows = first_row + number_of_rows <? matA.firstrow()+matA.rows();
@@ -416,14 +460,22 @@ Matrix & Matrix::operator %= ( const Matrix & matA)
 
 Matrix & Matrix::apply ( float(*f)( float ) )
 {
-     *this = map( f, *this );
-     return *this;
+    *this = map( f, *this );
+	 
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+
+    return *this;
 };
 
 Matrix & Matrix::apply ( float(*f)( float, float ), const Matrix& matA)
 {
-     *this = map( f, *this , matA);
-     return *this;
+    *this = map( f, *this , matA);
+
+	decomp_list->dec_refcount();
+    decomp_list = new Linked_List< Composition >;
+
+    return *this;
 };
 
 // Matrix Norms
@@ -808,17 +860,17 @@ Matrix inverse( const Matrix &matA )
 // Decompositions
 void    Matrix:: setDecompose ( Composition *comA, int  key )
 {
-    decomp_list.add( comA, key );
+    decomp_list->add( comA, key );
 };
 
 Composition* Matrix:: getDecompose ( int key ) const
 {
-    return decomp_list.find( key );
+    return decomp_list->find( key );
 };
 
 void    Matrix:: delDecompose ( int  key )
 {
-    decomp_list.del( key );
+    decomp_list->del( key );
 };
 
 // ==============================================

@@ -12,17 +12,23 @@
 //  concepts and direction. 
 //
 //  Revision:
-/*  $Id: Matrix.H,v 1.4 1993/11/18 07:29:25 jak Exp $
+/*  $Id: Matrix.H,v 1.5 1993/11/20 02:19:41 jak Exp $
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.4  1993/11/18 07:29:25  jak
-/*  Added alot of increased functionality, including support for
-/*  non-zero aligned matrices.  This supports dealing with
-/*  arbitrary matrix partitions.  Also, LU decompositions are
-/*  stored with the matrices the derived from, and are recovered
-/*  rather than re-computed if a matrix is re-used.   -jak
+/*  Revision 1.5  1993/11/20 02:19:41  jak
+/*  Added Time and resource usage programs.  Also, the class is now
+/*  built into a library (libMatrix.a).  The Linked_List now has
+/*  reference counts and is correctly copied and deleted by the new
+/*  inc and dec ,methods for the reference count.  -jak
 /*
+ * Revision 1.4  1993/11/18  07:29:25  jak
+ * Added alot of increased functionality, including support for
+ * non-zero aligned matrices.  This supports dealing with
+ * arbitrary matrix partitions.  Also, LU decompositions are
+ * stored with the matrices the derived from, and are recovered
+ * rather than re-computed if a matrix is re-used.   -jak
+ *
  * Revision 1.3  1993/11/15  20:29:41  jak
  * Corrections and fixes.  Works now with GCC2.5.3 and Libg++2.5.1 -jak
  **/
@@ -30,7 +36,7 @@
 
 #ifndef _Matrix_H
 #define _Matrix_H
-static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.4 1993/11/18 07:29:25 jak Exp $";
+static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.5 1993/11/20 02:19:41 jak Exp $";
 
 #include <iostream.h>
 #include <sys/types.h>
@@ -106,7 +112,7 @@ protected:
     int first_row, first_col;
     unsigned int number_of_rows, number_of_cols;
     float **m;
-    Linked_List< Composition > decomp_list;
+    Linked_List< Composition > *decomp_list;
     void allocate(void);
     void deallocate(void);
 
