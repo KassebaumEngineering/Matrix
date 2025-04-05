@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "simple.C": "cpp",
+        "Matrix.C": "cpp",
+        "twolevel.C": "cpp",
+        "matrixtest.C": "cpp",
+        "TimeValue.C": "cpp",
+        "TimeUse.C": "cpp"
+    }
+}
