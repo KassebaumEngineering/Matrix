@@ -13,9 +13,9 @@
 //
 //  History:
 /*    $Log: TimeValue.H,v $
-/*    Revision 1.6  1993/11/30 05:36:39  jak
-/*    A Small fix to the operator /()  -jak
-/*
+ *    Revision 1.6  1993/11/30 05:36:39  jak
+ *    A Small fix to the operator /()  -jak
+ *
  * Revision 1.5  1993/11/30  05:24:48  jak
  * Changed the implementation of the TimeValue Class.  -jak
  *
@@ -42,9 +42,8 @@
 
 static char rcsid_TimeValue_H[] = "$Id: TimeValue.H,v 1.6 1993/11/30 05:36:39 jak Exp $";
 
-#pragma interface 
 
-#include <iostream.h>
+#include <iostream> // Use modern C++ header
 #include <sys/types.h>
 #include <sys/time.h>
 #include <math.h>
@@ -82,9 +81,9 @@ public:
 
     friend TimeValue   operator *( const TimeValue&, double );
     friend TimeValue   operator /( const TimeValue&, double );
-    friend TimeValue&   time_abs ( TimeValue& );
+    friend TimeValue    time_abs ( TimeValue& ); // Return by value, not reference
 
-    friend ostream & operator << (ostream &, const TimeValue&);
+    friend std::ostream & operator << (std::ostream &, const TimeValue&); // Qualify ostream
 
 };
 

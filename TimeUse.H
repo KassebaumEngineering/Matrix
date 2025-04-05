@@ -13,10 +13,10 @@
  */
 //  History:
 /*  $Log: TimeUse.H,v $
-/*  Revision 1.4  1993/11/27 00:20:28  jak
-/*  Matrix Class has been ported for use with the AT&T cfront compiler version 3
-/*  (with templates).   -jak
-/*
+ *  Revision 1.4  1993/11/27 00:20:28  jak
+ *  Matrix Class has been ported for use with the AT&T cfront compiler version 3
+ *  (with templates).   -jak
+ *
  * Revision 1.3  1993/11/20  21:53:20  jak
  * Fixed a bug in the Linked_List_Template to allow it to be correctly
  * included and used in a library situation.  -jak
@@ -36,7 +36,6 @@
 #define _TimeUse_H
 static char rcsid_TimeUse_H[] =  "$Id: TimeUse.H,v 1.4 1993/11/27 00:20:28 jak Exp $";
 
-#pragma interface 
 
 #include "TimeValue.H"
 #include "Linked_List_Template.H"

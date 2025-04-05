@@ -16,9 +16,9 @@
  */
 //  History:
 /*  $Log: matrixtest.C,v $
-/*  Revision 1.6  1993/11/20 06:10:05  jak
-/*  Bug fixes and optimization turned on.   -jak
-/*
+ *  Revision 1.6  1993/11/20 06:10:05  jak
+ *  Bug fixes and optimization turned on.   -jak
+ *
  * Revision 1.5  1993/11/20  03:18:46  jak
  * Added the matrix determinant function.  -jak
  *
@@ -34,21 +34,23 @@
  **/
 // =====================================
 
-static char rcsid_MAIN_C[] =  "$Id: matrixtest.C,v 1.6 1993/11/20 06:10:05 jak Exp $";
+static char __attribute__((unused)) rcsid_MAIN_C[] =  "$Id: matrixtest.C,v 1.6 1993/11/20 06:10:05 jak Exp $";
 
 #ifdef LIBGpp
 #include <std.h>
 #endif
 
-#include <iostream.h>
+#include <iostream> // Use modern C++ header
 #include "Matrix.H"
 #include "TimeUse.H"
+
+using namespace std; // For cout, etc.
 
 float square( float );
 
 float divide( float , float );
 
-main()
+int main() // Add return type int
 {
     Matrix A(3,3), B(2,3), C(2,2), D(2,1), E(3,1), F(2,2);
     Matrix *Big;

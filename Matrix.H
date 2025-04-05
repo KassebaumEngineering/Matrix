@@ -18,10 +18,10 @@
  */
 //  History:
 /*  $Log: Matrix.H,v $
-/*  Revision 1.11  1993/11/27 00:20:25  jak
-/*  Matrix Class has been ported for use with the AT&T cfront compiler version 3
-/*  (with templates).   -jak
-/*
+  Revision 1.11  1993/11/27 00:20:25  jak
+  Matrix Class has been ported for use with the AT&T cfront compiler version 3
+  (with templates).   -jak
+
  * Revision 1.10  1993/11/24  00:13:58  jak
  * Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
  * deleted in LU_Decmposition. -jak
@@ -64,12 +64,12 @@
 #define _Matrix_H
 static char rcsid_Matrix_H[] =  "$Id: Matrix.H,v 1.11 1993/11/27 00:20:25 jak Exp $";
 
-#pragma interface
+// #pragma interface // Removed obsolete pragma
 
-#include <iostream.h>
+#include <iostream> // Use modern C++ header
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <strings.h>
+#include <cstring> // Use modern C++ header (for strncpy)
 
 class Matrix;
 class Composition;
@@ -77,6 +77,13 @@ class LU_Decomposition;
 class IntArray;
 
 #include "Linked_List_Template.H"
+
+// Forward declarations for Matrix friend functions
+class Matrix; // Ensure Matrix is known
+Matrix Identity( int size );
+Matrix UpperTriangle( int size );
+Matrix LowerTriangle( int size );
+Matrix Ones( int rows, int cols ); // Also declare Ones
 
 const float TINY = 1.0e-20; 	// some small number not equal to zero
 
@@ -110,18 +117,18 @@ public:
          start(s), end(e), step(st), current(s) {};
     ~Range(){};
 
-    inline NUMTYPE start( void ) const { return start; }
+    inline NUMTYPE getStart( void ) const { return start; } // Renamed function
     inline void setStart( NUMTYPE s ) const { start = s; }
 
-    inline NUMTYPE end( void ) const { return end; }
+    inline NUMTYPE getEnd( void ) const { return end; } // Renamed function
     inline void setEnd( NUMTYPE e ) const { end = e; }
 
-    inline NUMTYPE step( void ) const{ return step; }
+    inline NUMTYPE getStep( void ) const{ return step; } // Renamed function
     inline void setStep( NUMTYPE st ) const{ step = st; }
 
     inline NUMTYPE value() const{ return current; }
     inline NUMTYPE next(){ 
-        register NUMTYPE rtn;
+        NUMTYPE rtn; // Removed deprecated 'register' keyword
         rtn = current;
         current += step;
         if (current > end) current = start;
@@ -175,9 +182,9 @@ public:
     inline float* & operator [] ( int i ) const { return m[ i ]; };
     inline int has_element( int i, int j) const {
         if (     (i <  first_row) 
-              || (i >= first_row + number_of_rows ) 
+              || (i >= first_row + static_cast<int>(number_of_rows) )
               || (j <  first_col) 
-              || (j >= first_col + number_of_cols ))
+              || (j >= first_col + static_cast<int>(number_of_cols) ))
             return 0;
         else
             return 1;
@@ -206,7 +213,7 @@ public:
 // Matrix Norms
 // default Euclidean norm p = 2
 // p = 1 -> 1-norm, p=0 -> infinity norm
-    friend float norm ( const Matrix& , float = 2.0 ); 
+    friend float norm ( const Matrix& , float ); // Removed default argument from friend declaration
 
     friend float determinant ( Matrix& ); 
 
@@ -259,7 +266,7 @@ public:
     };
 
 // Transformations
-    friend Matrix transpose( const Matrix &); 
+    friend Matrix transpose( const Matrix &);
     friend Matrix inverse( Matrix &);
 
 // Matrix elementwise functions (for signal processing)
@@ -270,8 +277,8 @@ public:
     friend Matrix map ( float(*)( float, float ), const Matrix&, const Matrix& );
 
 // Input Output
-    friend ostream & operator << (ostream &, const Matrix&);
-    friend istream & operator >> (istream &, const Matrix&);
+    friend std::ostream & operator << (std::ostream &, const Matrix&); // Added std:: qualifier
+    friend std::istream & operator >> (std::istream &, const Matrix&); // Added std:: qualifier
 
 // Decompositions
     void         setDecompose ( Composition *, int   );
@@ -322,7 +329,7 @@ public:
 
     inline int& operator [] ( int i ) const { return array[ i ]; };
     inline int has_element( int i ) const {
-        if ( (i <  first_index) || (i >= first_index + length ))
+        if ( (i <  first_index) || (i >= first_index + static_cast<int>(length) ))
             return 0;
         else
             return 1;
@@ -332,8 +339,8 @@ public:
     };
 
 // Input Output
-    friend ostream & operator << (ostream &, const IntArray&);
-    friend istream & operator >> (istream &, const IntArray&);
+    friend std::ostream & operator << (std::ostream &, const IntArray&); // Added std:: qualifier
+    friend std::istream & operator >> (std::istream &, const IntArray&); // Added std:: qualifier
 };
 
 class LU_Decomposition : public Composition

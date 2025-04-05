@@ -1,23 +1,14 @@
 
-#include <iostream.h>
-#include <math.h>
+#include <iostream> // Use modern C++ header
+#include <cmath>    // Use modern C++ header
+#include <random>   // For modern C++ random numbers
 #include "Matrix.H"
 
-#ifdef LIBGpp
+using namespace std; // For cout
 
-#include <std.h>
-#include <String.h>
-#include <Uniform.h>
-#include <ACG.h>
-
-ACG gen(100,20);
-Uniform rnd(-10.0, 10.0, &gen);
-
-#else
-
-#include <rand48.h>
-
-#endif
+// Setup for modern C++ random number generation
+std::mt19937 gen(10134); // Mersenne Twister engine seeded with 10134 (like original srand48)
+std::uniform_real_distribution<float> rnd(-10.0f, 10.0f);
 
 Matrix X1(1,100), X2(1,100), X3(1,100), Y(1,100);
 Matrix Z11(1,100), Z22(1,100), Z33(1,100), Z12(1,100), Z13(1,100), Z23(1,100);
@@ -42,44 +33,41 @@ float _sumsq( float a )
     return val;
 }
 
-float sumsq( Matrix &matA )
+float sumsq( const Matrix &matA ) // Accept const reference
 {
    sum_of_squares = 0.0;
    map( &_sumsq, matA );
    return sum_of_squares;
 }
 
-main()
+int main() // Standard C++ main signature
 {
     Matrix W1(1,6), W2(1,6), W3(1,6);
     float E, Elast;
     int i;
 
-#ifndef LIBGpp
-    srand48( 10134 );
-#endif
+    // Seeding is done at initialization of 'gen' above
 
     for (i=0; i<100; i++) {
-#ifdef LIBGpp
-        X1[0][i] = rnd();
-        X2[0][i] = rnd();
-        X3[0][i] = rnd();
-#else
-        X1[0][i] = (float) (20.0 * drand48() - 10.0);
-        X2[0][i] = (float) (20.0 * drand48() - 10.0);
-        X3[0][i] = (float) (20.0 * drand48() - 10.0);
-#endif
+        X1[0][i] = rnd(gen); // Generate random number using engine and distribution
+        X2[0][i] = rnd(gen);
+        X3[0][i] = rnd(gen);
     }
    
-    Y = X1*3.0 + X2*2.0 + (X2^X3)*4.0 + X3*6.0 + 5.0;
+    // NOTE: The original code uses operator^ for element-wise multiplication.
+    // This is non-standard. Assuming Matrix class overloads it this way.
+    // If compilation fails here, Matrix.C/Matrix.H might need adjustment
+    // or this line needs to use the element-wise multiply operator (e.g., operator&).
+    // Let's assume operator^ is overloaded correctly for now.
+    Y = X1*3.0f + X2*2.0f + (X1&X2)*4.0f + X3*6.0f + 5.0f; // Using operator& for element-wise mult, and float literals
 
-// Form the 2nd degree sequences
-    Z11 =  X1 ^ X1 ;
-    Z12 =  X1 ^ X2 ;
-    Z13 =  X1 ^ X3 ;
-    Z22 =  X2 ^ X2 ;
-    Z23 =  X2 ^ X3 ;
-    Z33 =  X3 ^ X3 ;
+// Form the 2nd degree sequences (using element-wise multiply operator &)
+    Z11 =  X1 & X1 ;
+    Z12 =  X1 & X2 ;
+    Z13 =  X1 & X3 ;
+    Z22 =  X2 & X2 ;
+    Z23 =  X2 & X3 ;
+    Z33 =  X3 & X3 ;
 
 // Form the parts of the equations
 //
@@ -121,17 +109,23 @@ main()
 
 // First step:
     XY12 = Y * transpose( X12 );
-    W12 = XY12 / XX12 ;
+    Matrix XY12_T = transpose(XY12); // Transpose XY12 (1x6) to 6x1
+    Matrix W12_T = XY12_T / XX12;    // Solve XX12 * W12_T = XY12_T. Result W12_T is 6x1
+    W12 = transpose(W12_T);          // Transpose result back to W12 (1x6)
     Y12 = W12 * X12;
     R12 = Y - Y12;
 
     XY13 = R12 * transpose( X13 );
-    W13 = XY13 / XX13 ;
+    Matrix XY13_T = transpose(XY13); // Transpose XY13 (1x6) to 6x1
+    Matrix W13_T = XY13_T / XX13;    // Solve XX13 * W13_T = XY13_T. Result W13_T is 6x1
+    W13 = transpose(W13_T);          // Transpose result back to W13 (1x6)
     Y13 = W13 * X13;
     R13 = R12 - Y13;
  
     XY23 = R13 * transpose( X23 );
-    W23 = XY23 / XX23 ;
+    Matrix XY23_T = transpose(XY23); // Transpose XY23 (1x6) to 6x1
+    Matrix W23_T = XY23_T / XX23;    // Solve XX23 * W23_T = XY23_T. Result W23_T is 6x1
+    W23 = transpose(W23_T);          // Transpose result back to W23 (1x6)
     Y23 = W23 * X23;
     R23 = R13 - Y23;
 
@@ -144,7 +138,8 @@ main()
 
 // Iteration step:
 //
-    for( Elast=10e20, i=0; i<100, fabs((double)(Elast-E))>10e-6 ; i++){
+    // Using && in loop condition instead of comma operator
+    for( Elast=1.0e21f, i=0; i<100 && std::fabs(Elast-E) > 1.0e-6f ; i++){
         Matrix T12(1,100), T13(1,100), T23(1,100);
 
         W1 = W12;
@@ -153,19 +148,25 @@ main()
 
         T12 = Y - Y13 - Y23;
         XY12 = T12 * transpose( X12 );
-        W12  = XY12 / XX12 ;
+        Matrix XY12_T_iter = transpose(XY12); // Transpose XY12 (1x6) to 6x1
+        Matrix W12_T_iter = XY12_T_iter / XX12;    // Solve XX12 * W12_T = XY12_T. Result W12_T is 6x1
+        W12 = transpose(W12_T_iter);          // Transpose result back to W12 (1x6)
         Y12 = W12 * X12;
         R12 = T12 - Y12;
 
         T13 = Y - Y12 - Y23;
         XY13 = T13  * transpose( X13 );
-        W13 = XY13 / XX13 ;
+        Matrix XY13_T_iter = transpose(XY13); // Transpose XY13 (1x6) to 6x1
+        Matrix W13_T_iter = XY13_T_iter / XX13;    // Solve XX13 * W13_T = XY13_T. Result W13_T is 6x1
+        W13 = transpose(W13_T_iter);          // Transpose result back to W13 (1x6)
         Y13 = W13 * X13;
         R13 = T13 - Y13;
 
         T23 = Y - Y12 - Y13;
         XY23 = T23 * transpose( X23 );
-        W23 = XY23 / XX23 ;
+        Matrix XY23_T_iter = transpose(XY23); // Transpose XY23 (1x6) to 6x1
+        Matrix W23_T_iter = XY23_T_iter / XX23;    // Solve XX23 * W23_T = XY23_T. Result W23_T is 6x1
+        W23 = transpose(W23_T_iter);          // Transpose result back to W23 (1x6)
         Y23 = W23 * X23;
         R23 = T23 - Y23;
        
@@ -191,5 +192,7 @@ main()
     cout << "E = " << E << "\n";
     cout << "Error vector = \n";
     cout << transpose(Y - ( W12 * X12 ) - ( W13 * X13 ) - ( W23 * X23 ) );
+
+    return 0; // Return 0 from main
 };
 

@@ -15,9 +15,9 @@
 //
 // History:
 /*    $Log: TimeValue.C,v $
-/*    Revision 1.6  1993/11/30 05:36:37  jak
-/*    A Small fix to the operator /()  -jak
-/*
+    Revision 1.6  1993/11/30 05:36:37  jak
+    A Small fix to the operator /()  -jak
+    
  * Revision 1.5  1993/11/30  05:24:46  jak
  * Changed the implementation of the TimeValue Class.  -jak
  *
@@ -41,7 +41,7 @@
 //  ************************************************************
 static char rcsid_TimeValue_C[] = "$Id: TimeValue.C,v 1.6 1993/11/30 05:36:37 jak Exp $";
 
-#pragma implementation
+// #pragma implementation // Removed obsolete pragma
 
 #include "TimeValue.H"
 #include <sys/time.h>
@@ -154,12 +154,12 @@ int operator<=( const TimeValue& t1, const TimeValue& t2 )
     return ( t1.the_time <= t2.the_time );
 };
 
-TimeValue& time_abs( TimeValue& atime )
+TimeValue time_abs( TimeValue& atime ) // Return by value
 {
     return TimeValue( fabs(atime.the_time) );
 };
 
-ostream & operator << (ostream &cbuf, const TimeValue& atime)
+std::ostream & operator << (std::ostream &cbuf, const TimeValue& atime) // Qualify ostream
 {
     cbuf << atime.the_time << " seconds ";
     return cbuf;

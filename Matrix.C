@@ -16,10 +16,10 @@
  */
 //  History:
 /*  $Log: Matrix.C,v $
-/*  Revision 1.11  1993/11/27 00:20:22  jak
-/*  Matrix Class has been ported for use with the AT&T cfront compiler version 3
-/*  (with templates).   -jak
-/*
+  Revision 1.11  1993/11/27 00:20:22  jak
+  Matrix Class has been ported for use with the AT&T cfront compiler version 3
+  (with templates).   -jak
+
  * Revision 1.10  1993/11/24  00:13:56  jak
  * Major Bug Fixed.  A new'ed pointer with offset was being incorrectly
  * deleted in LU_Decmposition. -jak
@@ -60,17 +60,25 @@
 
 static char rcsid_MATRIX_C[] =  "$Id: Matrix.C,v 1.11 1993/11/27 00:20:22 jak Exp $";
 
-#include <new.h>
-#include <stdlib.h>
-#include <math.h>
+#include <new>      // Use modern C++ header
+#include <cstdlib>  // Use modern C++ header
+#include <cmath>    // Use modern C++ header
+#include <iostream> // For cerr, ostream, istream
+#include <cstring>  // For strlen
 
-#pragma implementation
+using namespace std; // Use standard namespace
+
+// #pragma implementation // Removed obsolete pragma
 #include "Matrix.H"
 #include "Linked_List_Template.H"
 
 #define ABS(x) ((x)>=0?(x):-(x))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+// Forward declarations for friend functions defined later
+Matrix Ones( int, int );
+Matrix Identity( int );
 
 void Abort( const char *s ){
     cerr <<  s << "\n";
@@ -94,8 +102,8 @@ first_row(fr), number_of_rows(r), first_col(fc), number_of_cols(c), m(0), decomp
 // Copy Constructor
 Matrix::Matrix(const Matrix &matA):  first_row(matA.first_row), number_of_rows(matA.number_of_rows), first_col(matA.first_col), number_of_cols(matA.number_of_cols), m(0)
 {
-    register int r,c;
-    register float *ptrA, *ptrB;
+    int r,c;
+    float *ptrA, *ptrB;
 
     decomp_list = matA.decomp_list;
 	decomp_list->inc_refcount();
@@ -131,8 +139,8 @@ void Matrix::deallocate()
 
 void Matrix::allocate()
 {
-    register int r, size;
-    register float *newmat, *ptr;
+    int r, size;
+    float *newmat, *ptr;
 
     if( (size = number_of_rows * number_of_cols) > 0 ){
 
@@ -167,8 +175,8 @@ void Matrix::allocate()
 
 Matrix& Matrix::operator=(const Matrix &matB)   // performs a copy
 {
-    register int r,c;
-    register float *ptrB, *ptrA;
+    int r,c;
+    float *ptrB, *ptrA;
 
 	decomp_list->dec_refcount();
     decomp_list = matB.decomp_list;
@@ -210,7 +218,7 @@ Matrix Matrix:: operator() ( int fr, int fc, int rows, int cols ) const
 
 Matrix& Matrix:: shift_to ( int new_fr, int new_fc )
 {
-    register int r;
+    int r;
 
 // adjust collumns
     if( &(m[first_row]) != (float **)0 ){
@@ -230,8 +238,8 @@ Matrix& Matrix:: shift_to ( int new_fr, int new_fc )
 Matrix & Matrix::operator += ( const Matrix& matA )
 {
     int fr,fc,rows,cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a;
+    int r,c;
+    float *ptr_r, *ptr_a;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -271,7 +279,7 @@ Matrix & Matrix::operator += ( const Matrix& matA )
 
 Matrix & Matrix::operator += ( float scalar )
 {
-    register int r,c;
+    int r,c;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -286,8 +294,8 @@ Matrix & Matrix::operator += ( float scalar )
 Matrix & Matrix::operator -= ( const Matrix& matA)
 {
     int fr,fc,rows,cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a;
+    int r,c;
+    float *ptr_r, *ptr_a;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -327,7 +335,7 @@ Matrix & Matrix::operator -= ( const Matrix& matA)
 
 Matrix & Matrix::operator -= ( float scalar)
 {
-    register int r,c;
+    int r,c;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -341,8 +349,8 @@ Matrix & Matrix::operator -= ( float scalar)
 
 Matrix & Matrix::operator *= ( const Matrix& matA)
 {
-    register int r,c,q;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c,q;
+    float *ptr_r, *ptr_a, *ptr_b;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -388,7 +396,7 @@ Matrix & Matrix::operator *= ( const Matrix& matA)
 
 Matrix & Matrix::operator *= ( float scalar )
 {
-    register int r,c;
+    int r,c;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -413,8 +421,8 @@ Matrix & Matrix::operator /= ( Matrix& matA)
 Matrix & Matrix::operator &= ( const Matrix& matA)
 {
     int fr, fc, rows, cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c;
+    float *ptr_r, *ptr_a, *ptr_b;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -453,8 +461,8 @@ Matrix & Matrix::operator &= ( const Matrix& matA)
 Matrix & Matrix::operator %= ( const Matrix & matA)
 {
     int fr, fc, rows, cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c;
+    float *ptr_r, *ptr_a, *ptr_b;
 
 	decomp_list->dec_refcount();
     decomp_list = new Linked_List< Composition >;
@@ -515,8 +523,8 @@ Matrix & Matrix::apply ( float(*f)( float, float ), const Matrix& matA)
 // p = 1 -> 1-norm, p=0 -> infinity norm
 float norm ( const Matrix& matA, float p )
 {
-    register int r,c;
-    register double temp, max_val;
+    int r,c;
+    double temp, max_val;
 
     if ( p == 0.0 ){        // infinity norm (max row-sum norm)
         for( max_val=0.0, r=matA.first_row;
@@ -567,8 +575,8 @@ float determinant ( Matrix& matA )
 // Comparison Operations
 int operator == ( const Matrix& matA, const Matrix&matB )
 {
-    register int r,c;
-    register float result;
+    int r,c;
+    float result;
 
     if ( matA.number_of_rows != matB.number_of_rows ) return 0;
     if ( matA.first_row != matB.first_row )  return 0;
@@ -585,8 +593,8 @@ int operator == ( const Matrix& matA, const Matrix&matB )
 
 Matrix transpose( const Matrix &matA )
 {
-    register float *ptr_dest;
-    register int r,c;
+    float *ptr_dest;
+    int r,c;
     Matrix   result;
 
     result = Matrix( matA.first_col, matA.first_row, matA.number_of_cols, matA.number_of_rows );
@@ -606,8 +614,8 @@ Matrix operator+( const Matrix &matA, const Matrix &matB )
 {
     Matrix   result;
     int fr, fc, rows, cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c;
+    float *ptr_r, *ptr_a, *ptr_b;
 
     fr = MIN( matB.first_row, matA.first_row );
     fc = MIN( matB.first_col, matA.first_col );
@@ -640,8 +648,8 @@ Matrix operator-( const Matrix &matA, const Matrix &matB )
 {
     Matrix   result;
     int fr, fc, rows, cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c;
+    float *ptr_r, *ptr_a, *ptr_b;
 
     fr = MIN( matB.first_row, matA.first_row );
     fc = MIN( matB.first_col, matA.first_col );
@@ -677,8 +685,8 @@ Matrix operator*( const Matrix &matA, const Matrix &matB )
 {    
     Matrix   result;
     int fr, fc, rows, cols;
-    register int r,c,q;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c,q;
+    float *ptr_r, *ptr_a, *ptr_b;
 
 // NUll Matrix in multiply
     if( matA.is_empty() || matB.is_empty()) {
@@ -723,7 +731,7 @@ Matrix operator*( const Matrix &matA, const Matrix &matB )
 Matrix operator*( float scalar, const Matrix &matA )
 {
     Matrix result( matA );
-    register int r,c;
+    int r,c;
 
 	for( r=matA.first_row; r<matA.first_row+matA.number_of_rows; r++)
 		for( c=matA.first_col; c<matA.first_col+matA.number_of_cols; c++)
@@ -734,7 +742,7 @@ Matrix operator*( float scalar, const Matrix &matA )
 
 Matrix operator+( const Matrix &matA, float scalar){
     Matrix result( matA );
-    register int r,c;
+    int r,c;
 
 	for( r=matA.first_row; r<matA.first_row+matA.number_of_rows; r++)
 		for( c=matA.first_col; c<matA.first_col+matA.number_of_cols; c++)
@@ -745,7 +753,7 @@ Matrix operator+( const Matrix &matA, float scalar){
 
 Matrix map( float (*f)(float), const Matrix &matA){
     Matrix result( matA );
-    register int r,c;
+    int r,c;
 
 	for( r=matA.first_row; r<matA.first_row+matA.number_of_rows; r++)
 		for( c=matA.first_col; c<matA.first_col+matA.number_of_cols; c++)
@@ -755,7 +763,7 @@ Matrix map( float (*f)(float), const Matrix &matA){
 
 Matrix map( float (*f)(float,float), const Matrix &matA, const Matrix &matB){
     Matrix result;
-    register int r,c;
+    int r,c;
 
     if ( matA.number_of_rows != matB.number_of_rows ) 
         Abort("map(float(*)(float,float),const Matrix&,const Matrix&):Incompatible Row Dimensions. \n");
@@ -776,8 +784,8 @@ Matrix map( float (*f)(float,float), const Matrix &matA, const Matrix &matB){
 Matrix operator & ( const Matrix &matA, const Matrix &matB){
     Matrix result;
     int fr, fc, rows, cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c;
+    float *ptr_r, *ptr_a, *ptr_b;
 
     fr = MAX( matB.first_row, matA.first_row );
     fc = MAX( matB.first_col, matA.first_col );
@@ -804,8 +812,8 @@ Matrix operator & ( const Matrix &matA, const Matrix &matB){
 Matrix operator % ( const Matrix &matA, const Matrix &matB){
     Matrix result;
     int fr, fc, rows, cols;
-    register int r,c;
-    register float *ptr_r, *ptr_a, *ptr_b;
+    int r,c;
+    float *ptr_r, *ptr_a, *ptr_b;
 
     fr = MAX( matB.first_row, matA.first_row );
     fc = MAX( matB.first_col, matA.first_col );
@@ -829,10 +837,10 @@ Matrix operator % ( const Matrix &matA, const Matrix &matB){
     return result;
 };
 
-ostream & operator << (ostream &cbuf, const Matrix &matA)
+std::ostream & operator << (std::ostream &cbuf, const Matrix &matA) // Match header declaration
 {
-    register float *ptr;
-    register unsigned r,c;
+    float *ptr;
+    unsigned r,c;
 
     if ( strlen( matA.name ) > 0)
         cbuf << matA.name << " ";
@@ -853,10 +861,10 @@ ostream & operator << (ostream &cbuf, const Matrix &matA)
     return cbuf;
 };
 
-istream & operator >> (istream &cbuf, const Matrix &matA)
+std::istream & operator >> (std::istream &cbuf, const Matrix &matA) // Match header declaration
 {
-    register float *ptr;
-    register unsigned short r,c;
+    float *ptr;
+    unsigned short r,c;
 
     for (r=matA.first_row; r < matA.first_row + matA.number_of_rows; r++){
         ptr = &(matA[r][matA.first_col]);
@@ -929,7 +937,7 @@ void    Matrix:: delDecompose ( int  key )
 //
 
 Matrix Ones( int rows, int cols ){
-	register int i,j;
+	int i,j;
 	Matrix id(0,0,rows,cols,"Ones");
 	for(i=0;i<rows;i++)
 		for(j=0;j<cols;j++)
@@ -937,14 +945,14 @@ Matrix Ones( int rows, int cols ){
 	return id;
 };
 Matrix Identity( int size ){
-	register int i;
+	int i;
 	Matrix id(0,0,size,size,"Identity");
 	for(i=0;i<size;i++)
 		id[i][i] = 1.0;
 	return id;
 };
 Matrix UpperTriangle( int  size ){
-	register int i,j;
+	int i,j;
 	Matrix id(0,0,size,size,"UpperTriangular");
 	for(i=0;i<size;i++)
 		for(j=i;j<size;j++)
@@ -952,7 +960,7 @@ Matrix UpperTriangle( int  size ){
 	return id;
 };
 Matrix LowerTriangle( int  size ){
-	register int i,j;
+	int i,j;
 	Matrix id(0,0,size,size,"LowerTriangular");
 	for(i=0;i<size;i++)
 		for(j=0;j<=i;j++)
@@ -999,7 +1007,7 @@ LU_Decomposition::LU_Decomposition( Matrix &matA )
 // as described by Numerical Recipes in C.
 
     int first_row, first_col, col_to_row, size;
-    register int row, col, k;
+    int row, col, k;
     float *row_scaling;
     float permute_parity;  // even # of row permutations = +1.0, odd = -1.0
     LU_Decomposition *temp;
@@ -1046,7 +1054,7 @@ LU_Decomposition::LU_Decomposition( Matrix &matA )
             tempval = fabs( lumat[row][col] );
             if(tempval > max) max = tempval;
         }
-        if (max = 0.0) cerr << "Matrix::LU_Decomp - Singular Matrix\n";
+        if (max == 0.0) cerr << "Matrix::LU_Decomp - Singular Matrix\n"; // Fixed assignment to comparison
         row_scaling[ row ] = 1.0 / max;
     }
 
@@ -1113,7 +1121,7 @@ LU_Decomposition::~LU_Decomposition()
 Matrix LU_Decomposition::solve_for( const Matrix &matA )
 {
     Matrix result;
-    register int row, col;
+    int row, col;
     int first_row, first_col;
     int Rows, Cols;
 
@@ -1133,7 +1141,7 @@ Matrix LU_Decomposition::solve_for( const Matrix &matA )
     result = matA;
     for( col=first_col; col < first_col + Cols; col++ ){
         int flag, index;
-        register unsigned short k;
+        unsigned short k;
         unsigned short row_p;
         float sum;
 //
@@ -1171,7 +1179,7 @@ Matrix LU_Decomposition::solve_for( const Matrix &matA )
 
 float  LU_Decomposition:: determinant() 
 {
-    register int i, col_to_row;
+    int i, col_to_row;
     float result;
 
     col_to_row = lumat.firstrow() - lumat.firstcol();
@@ -1184,7 +1192,7 @@ float  LU_Decomposition:: determinant()
 
 Matrix LU_Decomposition:: operator[] ( int  key ) const
 {
-    register int i,j;
+    int i,j;
     Matrix rtn( lumat );
     Matrix temp;
     float value;
@@ -1223,8 +1231,8 @@ Matrix LU_Decomposition:: operator[] ( int  key ) const
 
 void IntArray:: allocate()
 {
-    register int r;
-    register int *ptr;
+    int r;
+    int *ptr;
 
     if( length > 0 ){
         array = (int *) new int [ length ];
@@ -1263,8 +1271,8 @@ length(len), first_index(fi)
 IntArray:: IntArray( const IntArray &ar ): 
 length(ar.length), first_index(ar.first_index)
 {
-    register int r;
-    register int *ptrA, *ptrB;
+    int r;
+    int *ptrA, *ptrB;
 
     allocate();
 
@@ -1282,8 +1290,8 @@ IntArray:: ~IntArray( void )
 // Assignment Operations
 IntArray& IntArray:: operator = (const IntArray &ar)
 {
-    register int r;
-    register int *ptrA, *ptrB;
+    int r;
+    int *ptrA, *ptrB;
 
     if (length != ar.length){
  		deallocate();
@@ -1307,8 +1315,8 @@ IntArray& IntArray:: operator = (const IntArray &ar)
 IntArray  IntArray:: operator() ( int fi, unsigned int len ) const 
 {
     IntArray result( fi, len );
-    register int r, start, stop;
-    register int *ptrA, *ptrB;
+    int r, start, stop;
+    int *ptrA, *ptrB;
 
     start = MAX( fi, first_index );
     stop  = MIN( fi+len, first_index+length );
@@ -1324,7 +1332,7 @@ IntArray  IntArray:: operator() ( int fi, unsigned int len ) const
 
 IntArray& IntArray:: shift_to ( int fi )
 {
-    register int i;
+    int i;
 
     for(i=first_index; i<first_index+length; i++)
         array[i] += ( fi - first_index );
@@ -1335,9 +1343,9 @@ IntArray& IntArray:: shift_to ( int fi )
     return *this;
 };
 
-ostream & operator << (ostream &cbuf, const IntArray &Array)
+std::ostream & operator << (std::ostream &cbuf, const IntArray &Array) // Match header declaration
 {
-    register int r;
+    int r;
 
     cbuf << "at ( " << Array.first_index << " )\n";
     if( Array.is_empty() )
@@ -1351,9 +1359,9 @@ ostream & operator << (ostream &cbuf, const IntArray &Array)
     return cbuf;
 };
 
-istream & operator >> (istream &cbuf, const IntArray &Array)
+std::istream & operator >> (std::istream &cbuf, const IntArray &Array) // Match header declaration
 {
-    register int r;
+    int r;
 
     for (r=Array.first_index; r < Array.first_index + Array.length; r++){
         cbuf >> Array[r];

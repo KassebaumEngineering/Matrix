@@ -64,10 +64,10 @@
 // ------------------------------------------------------------------
 //  History:
 /*    $Log: Linked_List_Template.H,v $
-/*    Revision 1.4  1993/11/27 00:20:17  jak
-/*    Matrix Class has been ported for use with the AT&T cfront compiler version 3
-/*    (with templates).   -jak
-/*
+    Revision 1.4  1993/11/27 00:20:17  jak
+    Matrix Class has been ported for use with the AT&T cfront compiler version 3
+    (with templates).   -jak
+
  * Revision 1.3  1993/11/20  21:53:09  jak
  * Fixed a bug in the Linked_List_Template to allow it to be correctly
  * included and used in a library situation.  -jak
@@ -91,7 +91,7 @@
 
 static char rcsid_Linked_List_H[] = "$Id: Linked_List_Template.H,v 1.4 1993/11/27 00:20:17 jak Exp $";
 
-#pragma interface
+// #pragma interface // Removed obsolete pragma
 
 template <class T> class Linked_List;
 
@@ -104,7 +104,7 @@ private:
 
 public:
     LL_Node(T* something, LL_Node<T> *nxt, int name):
-        datum(something), next(nxt), id(name)
+        id(name), datum(something), next(nxt) // Reordered to match declaration order
     {};
    ~LL_Node( void ){
         delete datum;
@@ -158,7 +158,7 @@ public:
 //  CONSTRUCTOR
 //
 template <class T>
-Linked_List<T>::Linked_List( void ) : head(0), current(0), Ref_count(0)
+Linked_List<T>::Linked_List( void ) : Ref_count(0), head(0), current(0) // Reordered to match declaration order
 {
 };
 
